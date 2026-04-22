@@ -1,0 +1,372 @@
+{
+  "schema_version": "1.0.0",
+  "crop": "cocoa",
+  "updated": "2026-04-21",
+  "languages": ["fr", "dyu", "bci", "en"],
+  "translation_status": {
+    "fr": "reviewed",
+    "en": "reviewed",
+    "dyu": "draft_requires_native_review",
+    "bci": "draft_requires_native_review"
+  },
+  "confidence_thresholds": {
+    "high": 0.80,
+    "medium": 0.55,
+    "low_requires_agronomist": 0.40
+  },
+  "diseases": {
+    "black_pod": {
+      "id": "black_pod",
+      "pathogen": "Phytophthora palmivora / Phytophthora megakarya",
+      "severity": "high",
+      "spread_risk": "very_high",
+      "names": {
+        "fr": "Pourriture brune du cabosse",
+        "dyu": "[FR→DYU à valider] Pourriture brune du cabosse",
+        "bci": "[FR→BCI à valider] Pourriture brune du cabosse",
+        "en": "Black pod rot"
+      },
+      "symptoms": {
+        "fr": [
+          "Taches brun foncé qui s'étendent rapidement sur la cabosse",
+          "La cabosse noircit entièrement en 1 à 2 semaines",
+          "Mycélium blanc sur la surface par temps humide",
+          "Fèves à l'intérieur pourrissent et deviennent noires"
+        ],
+        "en": [
+          "Dark brown spots that spread rapidly across the pod",
+          "Entire pod turns black within 1–2 weeks",
+          "White mycelium on the surface during humid weather",
+          "Beans inside rot and turn black"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir description française."],
+        "bci": ["[FR→BCI à valider] Voir description française."]
+      },
+      "treatment": {
+        "fr": [
+          "Retirer immédiatement toutes les cabosses infectées — ne pas les laisser au sol",
+          "Enterrer ou brûler les cabosses retirées, loin des cacaoyers sains",
+          "Appliquer un fongicide à base de cuivre (oxychlorure de cuivre) toutes les 3 semaines en saison pluvieuse",
+          "Tailler la plantation pour améliorer la circulation de l'air"
+        ],
+        "en": [
+          "Remove all infected pods immediately — do not leave them on the ground",
+          "Bury or burn removed pods, far from healthy cocoa trees",
+          "Apply copper-based fungicide (copper oxychloride) every 3 weeks during rainy season",
+          "Prune the plantation to improve air circulation"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir traitement en français."],
+        "bci": ["[FR→BCI à valider] Voir traitement en français."]
+      },
+      "prevention": {
+        "fr": [
+          "Récolter régulièrement — ne pas laisser de cabosses mûres trop longtemps",
+          "Éviter de planter trop dense, aérer la parcelle",
+          "Drainer les zones humides",
+          "Nettoyer les outils entre les arbres"
+        ],
+        "en": [
+          "Harvest regularly — do not leave ripe pods for too long",
+          "Avoid over-dense planting, keep the plot aerated",
+          "Drain wet areas",
+          "Clean tools between trees"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir prévention en français."],
+        "bci": ["[FR→BCI à valider] Voir prévention en français."]
+      },
+      "when_to_call_agronomist": {
+        "fr": "Si plus de 30% des cabosses sont touchées, ou si la maladie progresse malgré le traitement.",
+        "en": "If more than 30% of pods are affected, or if the disease spreads despite treatment.",
+        "dyu": "[FR→DYU à valider] Voir version française.",
+        "bci": "[FR→BCI à valider] Voir version française."
+      }
+    },
+    "frosty_pod_rot": {
+      "id": "frosty_pod_rot",
+      "pathogen": "Moniliophthora roreri",
+      "severity": "high",
+      "spread_risk": "high",
+      "note": "Pas encore confirmé en Côte d'Ivoire (2026) — inclus à titre préventif.",
+      "names": {
+        "fr": "Pourriture givrée (monilia)",
+        "dyu": "[FR→DYU à valider] Pourriture givrée",
+        "bci": "[FR→BCI à valider] Pourriture givrée",
+        "en": "Frosty pod rot"
+      },
+      "symptoms": {
+        "fr": [
+          "Déformations et bosses sur les jeunes cabosses",
+          "Taches brun-chocolat qui s'élargissent",
+          "Couche blanche poudreuse (givre) sur la cabosse mature",
+          "Fèves à l'intérieur réduites à une masse pâteuse"
+        ],
+        "en": [
+          "Deformations and bumps on young pods",
+          "Chocolate-brown spots that enlarge",
+          "Powdery white layer (frost) on mature pods",
+          "Beans inside reduced to a paste-like mass"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir description française."],
+        "bci": ["[FR→BCI à valider] Voir description française."]
+      },
+      "treatment": {
+        "fr": [
+          "Retirer et détruire toute cabosse suspecte AVANT qu'elle ne sporule (couche blanche)",
+          "Ne jamais laisser une cabosse poudreuse sur l'arbre ou au sol",
+          "Appliquer un fongicide systémique (azoxystrobine ou équivalent) — consulter un agronome",
+          "Signaler immédiatement aux autorités agricoles (maladie à déclaration)"
+        ],
+        "en": [
+          "Remove and destroy any suspect pod BEFORE it sporulates (white coating)",
+          "Never leave a powdery pod on the tree or ground",
+          "Apply systemic fungicide (azoxystrobin or equivalent) — consult an agronomist",
+          "Report immediately to agricultural authorities (notifiable disease)"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir traitement en français."],
+        "bci": ["[FR→BCI à valider] Voir traitement en français."]
+      },
+      "prevention": {
+        "fr": [
+          "Surveillance hebdomadaire des parcelles",
+          "Ne pas importer de matériel végétal d'Amérique latine",
+          "Récolte fréquente et sanitation rigoureuse",
+          "Formation des ouvriers à l'identification précoce"
+        ],
+        "en": [
+          "Weekly plot monitoring",
+          "Do not import plant material from Latin America",
+          "Frequent harvest and rigorous sanitation",
+          "Train workers on early identification"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir prévention en français."],
+        "bci": ["[FR→BCI à valider] Voir prévention en français."]
+      },
+      "when_to_call_agronomist": {
+        "fr": "IMMÉDIATEMENT. Cette maladie peut détruire une plantation entière si elle s'établit.",
+        "en": "IMMEDIATELY. This disease can destroy an entire plantation if it establishes itself.",
+        "dyu": "[FR→DYU à valider] Voir version française.",
+        "bci": "[FR→BCI à valider] Voir version française."
+      }
+    },
+    "swollen_shoot": {
+      "id": "swollen_shoot",
+      "pathogen": "Cacao swollen shoot virus (CSSV) — transmis par cochenilles",
+      "severity": "very_high",
+      "spread_risk": "high",
+      "names": {
+        "fr": "Maladie du swollen shoot (virus du gonflement)",
+        "dyu": "[FR→DYU à valider] Maladie du swollen shoot",
+        "bci": "[FR→BCI à valider] Maladie du swollen shoot",
+        "en": "Cacao swollen shoot virus (CSSV)"
+      },
+      "symptoms": {
+        "fr": [
+          "Gonflements sur les rameaux, branches et racines",
+          "Feuilles rouges puis jaunes avec bandes le long des nervures",
+          "Cabosses petites, arrondies, à maturité précoce",
+          "Baisse progressive du rendement puis mort de l'arbre (2–5 ans)"
+        ],
+        "en": [
+          "Swellings on shoots, branches, and roots",
+          "Red then yellow leaves with bands along the veins",
+          "Small, rounded pods, early ripening",
+          "Progressive yield loss then tree death (2–5 years)"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir description française."],
+        "bci": ["[FR→BCI à valider] Voir description française."]
+      },
+      "treatment": {
+        "fr": [
+          "Aucun traitement curatif — la maladie est virale",
+          "ARRACHER et brûler immédiatement l'arbre infecté ET ses voisins dans un rayon de 10 m",
+          "Traiter les cochenilles (vecteur) avec savon insecticide ou neem",
+          "Ne replanter qu'après 6 mois — sol reposé"
+        ],
+        "en": [
+          "No curative treatment — the disease is viral",
+          "UPROOT and burn the infected tree AND its neighbors within 10 m",
+          "Treat mealybugs (the vector) with insecticidal soap or neem oil",
+          "Replant only after 6 months — rest the soil"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir traitement en français."],
+        "bci": ["[FR→BCI à valider] Voir traitement en français."]
+      },
+      "prevention": {
+        "fr": [
+          "Utiliser des variétés tolérantes (lignées CNRA)",
+          "Contrôler les cochenilles avant la saison des pluies",
+          "Surveiller les bordures de plantation",
+          "Signaler au SNPR (Service National de Protection des Végétaux)"
+        ],
+        "en": [
+          "Plant tolerant varieties (CNRA lines)",
+          "Control mealybugs before the rainy season",
+          "Monitor plantation borders",
+          "Report to national plant protection service"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir prévention en français."],
+        "bci": ["[FR→BCI à valider] Voir prévention en français."]
+      },
+      "when_to_call_agronomist": {
+        "fr": "Toujours. Le swollen shoot est à déclaration obligatoire en Côte d'Ivoire.",
+        "en": "Always. Swollen shoot is a notifiable disease in Côte d'Ivoire.",
+        "dyu": "[FR→DYU à valider] Voir version française.",
+        "bci": "[FR→BCI à valider] Voir version française."
+      }
+    },
+    "vascular_streak_dieback": {
+      "id": "vascular_streak_dieback",
+      "pathogen": "Ceratobasidium theobromae",
+      "severity": "medium",
+      "spread_risk": "medium",
+      "names": {
+        "fr": "Dépérissement des tiges (VSD)",
+        "dyu": "[FR→DYU à valider] Dépérissement des tiges",
+        "bci": "[FR→BCI à valider] Dépérissement des tiges",
+        "en": "Vascular streak dieback (VSD)"
+      },
+      "symptoms": {
+        "fr": [
+          "Feuilles jaunissantes avec taches vertes, chute prématurée",
+          "Rayures brunes visibles dans le bois (tige coupée)",
+          "Dépérissement des extrémités des branches vers l'intérieur",
+          "Nœuds des branches renflés"
+        ],
+        "en": [
+          "Yellowing leaves with green patches, premature drop",
+          "Brown streaks visible in the wood (when stem is cut)",
+          "Branch dieback from tip inward",
+          "Swollen nodes on branches"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir description française."],
+        "bci": ["[FR→BCI à valider] Voir description française."]
+      },
+      "treatment": {
+        "fr": [
+          "Tailler les branches mortes 30 cm en dessous de la zone infectée",
+          "Brûler les branches taillées",
+          "Désinfecter le sécateur à l'alcool entre chaque arbre",
+          "Appliquer de la bouillie bordelaise sur les coupes"
+        ],
+        "en": [
+          "Prune dead branches 30 cm below the infected area",
+          "Burn the pruned branches",
+          "Disinfect pruners with alcohol between trees",
+          "Apply Bordeaux mixture to cuts"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir traitement en français."],
+        "bci": ["[FR→BCI à valider] Voir traitement en français."]
+      },
+      "prevention": {
+        "fr": [
+          "Maintenir une ombre modérée (pas trop dense)",
+          "Éviter le stress hydrique en saison sèche",
+          "Planter des variétés tolérantes",
+          "Tailler préventivement après la récolte"
+        ],
+        "en": [
+          "Maintain moderate shade (not too dense)",
+          "Avoid water stress in the dry season",
+          "Plant tolerant varieties",
+          "Prune preventively after harvest"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir prévention en français."],
+        "bci": ["[FR→BCI à valider] Voir prévention en français."]
+      },
+      "when_to_call_agronomist": {
+        "fr": "Si plus de 20% des arbres montrent des symptômes.",
+        "en": "If more than 20% of trees show symptoms.",
+        "dyu": "[FR→DYU à valider] Voir version française.",
+        "bci": "[FR→BCI à valider] Voir version française."
+      }
+    },
+    "healthy": {
+      "id": "healthy",
+      "pathogen": null,
+      "severity": "none",
+      "spread_risk": "none",
+      "names": {
+        "fr": "Cabosse saine",
+        "dyu": "[FR→DYU à valider] Cabosse saine",
+        "bci": "[FR→BCI à valider] Cabosse saine",
+        "en": "Healthy pod"
+      },
+      "symptoms": {
+        "fr": ["Couleur uniforme selon variété (jaune, rouge, orange)", "Surface lisse sans taches noires ni blanches", "Cabosse ferme au toucher"],
+        "en": ["Uniform color for the variety (yellow, red, orange)", "Smooth surface, no black or white spots", "Firm to the touch"],
+        "dyu": ["[FR→DYU à valider] Voir description française."],
+        "bci": ["[FR→BCI à valider] Voir description française."]
+      },
+      "treatment": {
+        "fr": ["Aucun traitement nécessaire. Continuez vos bonnes pratiques."],
+        "en": ["No treatment needed. Continue good practices."],
+        "dyu": ["[FR→DYU à valider] Aucun traitement nécessaire."],
+        "bci": ["[FR→BCI à valider] Aucun traitement nécessaire."]
+      },
+      "prevention": {
+        "fr": ["Récolte régulière", "Surveillance hebdomadaire", "Nettoyage des cabosses malades voisines"],
+        "en": ["Regular harvest", "Weekly monitoring", "Clean up diseased pods nearby"],
+        "dyu": ["[FR→DYU à valider] Voir prévention en français."],
+        "bci": ["[FR→BCI à valider] Voir prévention en français."]
+      },
+      "when_to_call_agronomist": {
+        "fr": "Jamais pour cette cabosse, mais une visite annuelle du champ est recommandée.",
+        "en": "Not for this pod, but an annual field visit is recommended.",
+        "dyu": "[FR→DYU à valider] Voir version française.",
+        "bci": "[FR→BCI à valider] Voir version française."
+      }
+    },
+    "other_damage": {
+      "id": "other_damage",
+      "pathogen": "Insectes, rongeurs, blessures mécaniques, ou maladie non identifiée",
+      "severity": "variable",
+      "spread_risk": "variable",
+      "names": {
+        "fr": "Dommage non identifié",
+        "dyu": "[FR→DYU à valider] Dommage non identifié",
+        "bci": "[FR→BCI à valider] Dommage non identifié",
+        "en": "Unidentified damage"
+      },
+      "symptoms": {
+        "fr": ["Trous ou perforations", "Morsures d'insectes ou de rongeurs", "Blessures mécaniques (machette, branche)", "Symptômes atypiques"],
+        "en": ["Holes or perforations", "Insect or rodent bites", "Mechanical wounds (machete, branch)", "Atypical symptoms"],
+        "dyu": ["[FR→DYU à valider] Voir description française."],
+        "bci": ["[FR→BCI à valider] Voir description française."]
+      },
+      "treatment": {
+        "fr": [
+          "Retirer la cabosse endommagée pour éviter une infection secondaire",
+          "Si insectes visibles, appliquer un traitement ciblé (neem, savon noir)",
+          "Consulter un agronome si les dommages se répètent"
+        ],
+        "en": [
+          "Remove the damaged pod to prevent secondary infection",
+          "If insects are visible, apply a targeted treatment (neem, black soap)",
+          "Consult an agronomist if damages recur"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir traitement en français."],
+        "bci": ["[FR→BCI à valider] Voir traitement en français."]
+      },
+      "prevention": {
+        "fr": [
+          "Piéger les rongeurs autour de la parcelle",
+          "Manipuler les cabosses avec précaution lors de la récolte",
+          "Surveiller les insectes ravageurs"
+        ],
+        "en": [
+          "Trap rodents around the plot",
+          "Handle pods carefully during harvest",
+          "Monitor for pest insects"
+        ],
+        "dyu": ["[FR→DYU à valider] Voir prévention en français."],
+        "bci": ["[FR→BCI à valider] Voir prévention en français."]
+      },
+      "when_to_call_agronomist": {
+        "fr": "Si vous n'êtes pas certain du diagnostic, ou si les dommages se généralisent.",
+        "en": "If unsure of the diagnosis, or if damage becomes widespread.",
+        "dyu": "[FR→DYU à valider] Voir version française.",
+        "bci": "[FR→BCI à valider] Voir version française."
+      }
+    }
+  }
+}

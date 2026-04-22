@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "PokouAI",
+    "slug": "pokou-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1b5e20"
+    },
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "ai.pokou.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "PokouAI needs camera access to photograph cocoa pods for disease diagnosis.",
+        "NSPhotoLibraryUsageDescription": "PokouAI needs photo library access to analyze existing photos of cocoa pods."
+      }
+    },
+    "android": {
+      "package": "ai.pokou.app",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1b5e20"
+      }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        { "cameraPermission": "Allow PokouAI to access your camera to photograph cocoa pods." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "Allow PokouAI to access your photo library." }
+      ]
+    ]
+  }
+}
