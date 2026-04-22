@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { diagnose, downloadModel, isModelDownloaded } from '@/services/LlamaService';
+import { diagnose, downloadModel, isModelDownloaded, MODEL_SIZE_MB } from '@/services/LlamaService';
 import { insertDiagnosis } from '@/services/db';
 import { currentLanguage } from '@/i18n';
 import type { RootStackParamList } from '@/types';
@@ -70,7 +70,7 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
           <>
             <Text style={styles.hint}>{t('diagnosis.model_loading')}</Text>
             <TouchableOpacity style={styles.btn} onPress={doDownload}>
-              <Text style={styles.btnText}>↓ GGUF (~2.8 GB)</Text>
+              <Text style={styles.btnText}>↓ GGUF (~{(MODEL_SIZE_MB / 1000).toFixed(1)} GB)</Text>
             </TouchableOpacity>
           </>
         )}

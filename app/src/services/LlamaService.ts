@@ -3,9 +3,10 @@ import type { DiagnosisResult, LanguageCode } from '@/types';
 import { buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';
 
-const MODEL_VERSION = 'cocoa_v1';
-const MODEL_FILENAME = 'cocoa_v1.gguf';
-const MODEL_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1.gguf';
+const MODEL_VERSION = 'cocoa_v1_e2b';
+const MODEL_FILENAME = 'cocoa_v1_e2b.gguf';
+const MODEL_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1_e2b.gguf';
+export const MODEL_SIZE_MB = 1500;
 
 type LlamaModule = {
   initLlama: (config: {

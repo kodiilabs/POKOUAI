@@ -6,7 +6,7 @@ Built for the [Gemma 4 Good Hackathon](https://kaggle.com/competitions/gemma-4-g
 
 - 📱 **100% offline** inference on entry-level Android phones (2–3 GB RAM)
 - 🗣️ **4 languages**: French, Dioula, Baoulé, English
-- 🧠 **Gemma 4 E4B** (multimodal) fine-tuned on cocoa diseases with QLoRA + Unsloth
+- 🧠 **Gemma 4 E2B** (multimodal) fine-tuned on cocoa diseases with QLoRA + Unsloth — ~1.5 GB GGUF fits low-end devices. E4B variant built as optional premium for ≥4 GB phones.
 - 🌾 **Primary use case**: cocoa disease diagnosis in Ivory Coast (5M+ farmers, mostly offline)
 
 ---
@@ -30,7 +30,7 @@ npm install
 npx expo start        # press 'a' for Android, 'i' for iOS
 ```
 
-First launch downloads the GGUF model (~2.8 GB). Subsequent launches are fully offline.
+First launch downloads the GGUF model (~1.5 GB, E2B). Subsequent launches are fully offline.
 
 ### ML pipeline (fine-tuning)
 
@@ -54,13 +54,15 @@ python ml/scripts/build_training_jsonl.py --images data/processed_aug --diseases
 ## Architecture
 
 ```
-Camera → Image preprocess → Gemma 4 E4B (GGUF Q4_K_M) → Response parser → UI (i18n)
+Camera → Image preprocess → Gemma 4 E2B (GGUF Q4_K_M) → Response parser → UI (i18n)
                                     ↑
                               LoRA adapter
                          (fine-tuned on cocoa)
 ```
 
-- **On-device**: `react-native-llama.cpp` loads the GGUF, runs multimodal inference.
+- **On-device**: `react-native-llama` loads the GGUF, runs multimodal inference.
+- **Primary model**: Gemma 4 E2B (~1.5 GB, runs in ~2 GB RAM). Selected because the target farmer phone is 2–3 GB RAM — E4B Q4_K_M (~2.8 GB) would leave no headroom for the OS and camera pipeline.
+- **Premium model**: Gemma 4 E4B variant trained from the same notebook (`VARIANT = 'e4b'`) for phones with ≥4 GB RAM.
 - **Cloud (optional)**: Gemma 4 27B MoE fallback for low-confidence results, over opt-in sync only.
 
 ---
