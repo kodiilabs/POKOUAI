@@ -54,16 +54,33 @@ python ml/scripts/build_training_jsonl.py --images data/processed_aug --diseases
 ## Architecture
 
 ```
-Camera → Image preprocess → Gemma 4 E2B (GGUF Q4_K_M) → Response parser → UI (i18n)
-                                    ↑
-                              LoRA adapter
-                         (fine-tuned on cocoa)
+TIER 1 — PHONE                always available
+  Gemma 4 E2B via llama.cpp   ~1.5 GB GGUF Q4_K_M, 2–3 GB RAM
+  (E4B auto-selected on ≥4 GB phones)
+
+      ↕ local WiFi (no internet)
+
+TIER 2 — COOPERATIVE HUB      extension worker's laptop
+  Gemma 4 27B via Ollama      higher accuracy, powers group teaching
+
+      ↕ when internet available
+
+TIER 3 — CLOUD                enhancement
+  Gemma 4 27B hosted          anonymized sync + outbreak map
 ```
 
-- **On-device**: `react-native-llama` loads the GGUF, runs multimodal inference.
-- **Primary model**: Gemma 4 E2B (~1.5 GB, runs in ~2 GB RAM). Selected because the target farmer phone is 2–3 GB RAM — E4B Q4_K_M (~2.8 GB) would leave no headroom for the OS and camera pipeline.
-- **Premium model**: Gemma 4 E4B variant trained from the same notebook (`VARIANT = 'e4b'`) for phones with ≥4 GB RAM.
-- **Cloud (optional)**: Gemma 4 27B MoE fallback for low-confidence results, over opt-in sync only.
+Routing: one function in [app/src/services/InferenceRouter.ts](app/src/services/InferenceRouter.ts) probes hub + internet in parallel, picks the highest available tier, and falls back automatically on error. Tier chosen per-diagnosis is recorded in the local DB and shown on the Result screen.
+
+### Education layer
+
+Every diagnosis is a teaching moment. Four modes on top of the diagnosis flow:
+
+- **Learn** — "Why this happened" explanation after any diagnosis ([LearnScreen.tsx](app/src/screens/LearnScreen.tsx))
+- **Prevention calendar** — seasonal actions for cocoa in Côte d'Ivoire ([PreventionCalendarScreen.tsx](app/src/screens/PreventionCalendarScreen.tsx))
+- **Quiz** — spaced-repetition Q&A keyed to the farmer's recent diagnoses ([QuizScreen.tsx](app/src/screens/QuizScreen.tsx))
+- **Group mode** — extension worker UI for teaching a group of farmers ([GroupModeScreen.tsx](app/src/screens/GroupModeScreen.tsx))
+
+Full prize positioning in [docs/PokouAI_Submission_WriteUp.md](docs/PokouAI_Submission_WriteUp.md).
 
 ---
 

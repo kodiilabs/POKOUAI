@@ -38,11 +38,22 @@ export interface FarmLogEntry {
   syncedAt: string | null;
 }
 
+export type InferenceTier = 'local' | 'hub' | 'cloud';
+
+export interface DiagnosisRouted extends DiagnosisResult {
+  tier: InferenceTier;
+}
+
 export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
-  Diagnosis: { imageUri?: string };
+  Diagnosis: { imageUri?: string; groupMode?: boolean };
   Result: { diagnosisId: number };
   FarmLog: undefined;
   Settings: undefined;
+  HubSettings: undefined;
+  Learn: { diagnosisId: number };
+  PreventionCalendar: undefined;
+  Quiz: { diagnosisId?: number };
+  GroupMode: undefined;
 };

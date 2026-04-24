@@ -7,7 +7,11 @@ const KEYS = {
   onboarded: 'pokouai.onboarded',
   lastSync: 'pokouai.last_sync',
   cloudSyncEnabled: 'pokouai.cloud_sync',
+  hubUrl: 'pokouai.hub_url',
+  preferTier: 'pokouai.prefer_tier',
 } as const;
+
+const DEFAULT_HUB_URL = 'http://192.168.1.100:11434';
 
 export async function getCrop(): Promise<CropId> {
   const v = (await AsyncStorage.getItem(KEYS.crop)) as CropId | null;
@@ -41,4 +45,12 @@ export async function getCloudSyncEnabled(): Promise<boolean> {
 
 export async function setCloudSyncEnabled(enabled: boolean): Promise<void> {
   await AsyncStorage.setItem(KEYS.cloudSyncEnabled, enabled ? '1' : '0');
+}
+
+export async function getHubUrl(): Promise<string> {
+  return (await AsyncStorage.getItem(KEYS.hubUrl)) ?? DEFAULT_HUB_URL;
+}
+
+export async function setHubUrl(url: string): Promise<void> {
+  await AsyncStorage.setItem(KEYS.hubUrl, url);
 }

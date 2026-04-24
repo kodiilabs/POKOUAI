@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { getDiagnosis, type DiagnosisRow } from '@/services/db';
-import type { ConfidenceBand, RootStackParamList } from '@/types';
+import type { ConfidenceBand, InferenceTier, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
@@ -15,13 +15,19 @@ const BAND_COLORS: Record<ConfidenceBand, string> = {
   low: '#c62828',
 };
 
+const TIER_LABEL: Record<InferenceTier, string> = {
+  local: '📱 Llama.cpp · on-device',
+  hub: '🛰 Ollama · hub',
+  cloud: '☁️ Cloud · 27B',
+};
+
 function bandFor(c: number): ConfidenceBand {
   if (c >= 0.8) return 'high';
   if (c >= 0.55) return 'medium';
   return 'low';
 }
 
-export default function ResultScreen({ route }: Props) {
+export default function ResultScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const { diagnosisId } = route.params;
   const [d, setD] = useState<DiagnosisRow | null>(null);
@@ -56,10 +62,15 @@ export default function ResultScreen({ route }: Props) {
 
         <View style={styles.header}>
           <Text style={styles.disease}>{d.diseaseName}</Text>
-          <View style={[styles.band, { backgroundColor: BAND_COLORS[band] }]}>
-            <Text style={styles.bandText}>
-              {t('result.confidence')}: {(d.confidence * 100).toFixed(0)}% · {t(`result.confidence_${band}`)}
-            </Text>
+          <View style={styles.badgeRow}>
+            <View style={[styles.band, { backgroundColor: BAND_COLORS[band] }]}>
+              <Text style={styles.bandText}>
+                {t('result.confidence')}: {(d.confidence * 100).toFixed(0)}% · {t(`result.confidence_${band}`)}
+              </Text>
+            </View>
+            <View style={styles.tierBadge}>
+              <Text style={styles.tierBadgeText}>{TIER_LABEL[d.tier]}</Text>
+            </View>
           </View>
         </View>
 
@@ -70,6 +81,21 @@ export default function ResultScreen({ route }: Props) {
         <View style={styles.callout}>
           <Text style={styles.calloutTitle}>📞 {t('result.agronomist')}</Text>
           <Text style={styles.calloutBody}>{d.agronomistAdvice}</Text>
+        </View>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('Learn', { diagnosisId })}
+          >
+            <Text style={styles.actionBtnText}>📖 {t('result.learn_more')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('Quiz', { diagnosisId })}
+          >
+            <Text style={styles.actionBtnText}>🧠 {t('result.practice')}</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.shareBtn} onPress={onShare}>
@@ -101,8 +127,16 @@ const styles = StyleSheet.create({
   image: { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, marginBottom: 16 },
   header: { marginBottom: 16 },
   disease: { fontSize: 24, fontWeight: '700', color: '#1b5e20' },
-  band: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginTop: 6 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  band: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   bandText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  tierBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#263238',
+  },
+  tierBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   section: {
     backgroundColor: '#fff',
     padding: 14,
@@ -121,6 +155,17 @@ const styles = StyleSheet.create({
   },
   calloutTitle: { fontWeight: '700', color: '#e65100', marginBottom: 4 },
   calloutBody: { color: '#4e342e', lineHeight: 20 },
+  actionRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  actionBtn: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1b5e20',
+  },
+  actionBtnText: { color: '#1b5e20', fontWeight: '700' },
   shareBtn: {
     backgroundColor: '#1b5e20',
     padding: 14,

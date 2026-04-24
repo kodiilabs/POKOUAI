@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import type { DiagnosisResult, FarmLogEntry, LanguageCode } from '@/types';
+import type { DiagnosisResult, FarmLogEntry, InferenceTier, LanguageCode } from '@/types';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -21,12 +21,19 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
       raw_response TEXT NOT NULL,
       model_version TEXT NOT NULL,
       latency_ms INTEGER NOT NULL,
+      tier TEXT NOT NULL DEFAULT 'local',
       note TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       synced_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_diagnoses_created ON diagnoses(created_at DESC);
   `);
+  // Additive migration for existing installs
+  try {
+    await db.execAsync(`ALTER TABLE diagnoses ADD COLUMN tier TEXT NOT NULL DEFAULT 'local'`);
+  } catch {
+    /* column already exists */
+  }
   return db;
 }
 
@@ -39,14 +46,15 @@ export async function insertDiagnosis(
   imageUri: string,
   language: LanguageCode,
   result: DiagnosisResult,
+  tier: InferenceTier = 'local',
 ): Promise<number> {
   const conn = ensureDb();
   const res = await conn.runAsync(
     `INSERT INTO diagnoses
      (image_uri, disease, disease_name, confidence, language,
       symptoms, treatment, prevention, agronomist_advice,
-      raw_response, model_version, latency_ms)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      raw_response, model_version, latency_ms, tier)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       imageUri,
       result.disease,
@@ -60,6 +68,7 @@ export async function insertDiagnosis(
       result.rawResponse,
       result.modelVersion,
       result.latencyMs,
+      tier,
     ],
   );
   return res.lastInsertRowId;
@@ -73,6 +82,7 @@ export interface DiagnosisRow extends FarmLogEntry {
   rawResponse: string;
   modelVersion: string;
   latencyMs: number;
+  tier: InferenceTier;
 }
 
 interface DbRow {
@@ -89,6 +99,7 @@ interface DbRow {
   raw_response: string;
   model_version: string;
   latency_ms: number;
+  tier: string | null;
   note: string | null;
   created_at: string;
   synced_at: string | null;
@@ -109,6 +120,7 @@ function rowToDiagnosis(r: DbRow): DiagnosisRow {
     rawResponse: r.raw_response,
     modelVersion: r.model_version,
     latencyMs: r.latency_ms,
+    tier: (r.tier as InferenceTier) ?? 'local',
     note: r.note,
     createdAt: r.created_at,
     syncedAt: r.synced_at,

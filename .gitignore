@@ -42,6 +42,9 @@ ios/
 ml/models/
 data/raw/
 data/processed/
+data/processed_aug/
+data/download/
+data/train/
 *.gguf
 *.safetensors
 *.bin

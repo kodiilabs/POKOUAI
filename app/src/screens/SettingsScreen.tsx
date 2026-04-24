@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { setLanguage, SUPPORTED_LANGUAGES } from '@/i18n';
 import {
@@ -10,11 +11,13 @@ import {
   setCloudSyncEnabled,
 } from '@/services/preferences';
 import { syncPending } from '@/services/SyncService';
-import type { LanguageCode } from '@/types';
+import type { LanguageCode, RootStackParamList } from '@/types';
 
-const MODEL_VERSION = 'cocoa_v1';
+const MODEL_VERSION = 'cocoa_v1_e2b';
 
-export default function SettingsScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
+
+export default function SettingsScreen({ navigation }: Props) {
   const { t, i18n } = useTranslation();
   const [cloudEnabled, setCloudEnabled] = useState(false);
   const [lastSync, setLastSyncState] = useState<string | null>(null);
@@ -63,6 +66,13 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <Text style={styles.rowText}>{MODEL_VERSION}</Text>
           </View>
+        </Section>
+
+        <Section title={t('settings.hub')}>
+          <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('HubSettings')}>
+            <Text style={styles.rowText}>🛰 {t('settings.hub_config')}</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </Section>
 
         <Section title={t('settings.last_sync')}>
@@ -126,6 +136,7 @@ const styles = StyleSheet.create({
   rowActive: { backgroundColor: '#e8f5e9' },
   rowText: { color: '#212121', fontSize: 15 },
   check: { color: '#1b5e20', fontWeight: '700' },
+  chevron: { color: '#9e9e9e', fontSize: 22 },
   cta: { backgroundColor: '#1b5e20', padding: 12, alignItems: 'center' },
   ctaText: { color: '#fff', fontWeight: '700' },
 });

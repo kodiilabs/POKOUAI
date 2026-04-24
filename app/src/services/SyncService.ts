@@ -1,23 +1,14 @@
 import { listDiagnoses, markSynced } from './db';
 import { getCloudSyncEnabled, setLastSync } from './preferences';
+import { isOnline } from './NetworkService';
 
 const SYNC_ENDPOINT = 'https://api.pokou.ai/v1/diagnoses';
-const HEALTH_ENDPOINT = 'https://api.pokou.ai/healthz';
 
 export interface SyncResult {
   attempted: number;
   succeeded: number;
   skippedNoNetwork: boolean;
   skippedDisabled: boolean;
-}
-
-async function isOnline(): Promise<boolean> {
-  try {
-    const res = await fetch(HEALTH_ENDPOINT, { method: 'GET' });
-    return res.ok;
-  } catch {
-    return false;
-  }
 }
 
 export async function syncPending(): Promise<SyncResult> {
@@ -72,3 +63,4 @@ export async function syncPending(): Promise<SyncResult> {
 }
 
 export { isOnline };
+

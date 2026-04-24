@@ -17,6 +17,11 @@ import DiagnosisScreen from '@/screens/DiagnosisScreen';
 import ResultScreen from '@/screens/ResultScreen';
 import FarmLogScreen from '@/screens/FarmLogScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import HubSettingsScreen from '@/screens/HubSettingsScreen';
+import LearnScreen from '@/screens/LearnScreen';
+import PreventionCalendarScreen from '@/screens/PreventionCalendarScreen';
+import QuizScreen from '@/screens/QuizScreen';
+import GroupModeScreen from '@/screens/GroupModeScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ONBOARDING_KEY = 'pokouai.onboarded';
@@ -61,6 +66,22 @@ export default function App() {
           <Stack.Screen name="Result" component={ResultScreen} />
           <Stack.Screen name="FarmLog" component={FarmLogScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="HubSettings" component={HubSettingsScreen} options={{ title: 'Hub' }} />
+          <Stack.Screen name="Learn" component={LearnScreen} />
+          <Stack.Screen
+            name="PreventionCalendar"
+            component={PreventionCalendarScreen}
+            options={{ title: 'Calendrier' }}
+          />
+          <Stack.Screen name="Quiz" component={QuizScreen} />
+          <Stack.Screen
+            name="GroupMode"
+            component={GroupModeScreen}
+            options={{
+              title: 'Group mode',
+              headerStyle: { backgroundColor: '#00838f' },
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

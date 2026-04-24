@@ -4,20 +4,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { diagnose, downloadModel, isModelDownloaded, MODEL_SIZE_MB } from '@/services/LlamaService';
+import { downloadModel, isModelDownloaded, MODEL_SIZE_MB } from '@/services/LlamaService';
+import { routeInference } from '@/services/InferenceRouter';
 import { insertDiagnosis } from '@/services/db';
 import { currentLanguage } from '@/i18n';
-import type { RootStackParamList } from '@/types';
+import type { InferenceTier, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Diagnosis'>;
 type Phase = 'idle' | 'model_missing' | 'downloading' | 'analyzing' | 'error';
 
+const TIER_LABEL: Record<InferenceTier, string> = {
+  local: '📱 local',
+  hub: '🛰 hub (Ollama)',
+  cloud: '☁️ cloud',
+};
+
 export default function DiagnosisScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
-  const { imageUri } = route.params;
+  const { imageUri, groupMode } = route.params;
   const [phase, setPhase] = useState<Phase>('idle');
   const [progress, setProgress] = useState(0);
   const [errorKey, setErrorKey] = useState<string>('diagnosis.error_generic');
+  const [chosenTier, setChosenTier] = useState<InferenceTier | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -40,14 +48,22 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
   const analyze = async () => {
     if (!imageUri) return;
     setPhase('analyzing');
+    setChosenTier(null);
     try {
-      const result = await diagnose(imageUri, currentLanguage());
-      if (result.confidenceBand === 'low') {
+      const routed = await routeInference(imageUri, currentLanguage(), {
+        onTierChosen: setChosenTier,
+      });
+      if (routed.confidenceBand === 'low') {
         setErrorKey('diagnosis.error_uncertain');
         setPhase('error');
         return;
       }
-      const id = await insertDiagnosis(imageUri, currentLanguage(), result);
+      if (groupMode) {
+        // In group mode we skip persistence — extension worker is demoing live
+        navigation.goBack();
+        return;
+      }
+      const id = await insertDiagnosis(imageUri, currentLanguage(), routed, routed.tier);
       navigation.replace('Result', { diagnosisId: id });
     } catch {
       setErrorKey('diagnosis.error_generic');
@@ -85,7 +101,10 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
         {phase === 'analyzing' && (
           <>
             <ActivityIndicator size="large" color="#1b5e20" />
-            <Text style={styles.hint}>{t('diagnosis.analyzing')}</Text>
+            <Text style={styles.hint}>
+              {t('diagnosis.analyzing')}
+              {chosenTier ? ` · ${TIER_LABEL[chosenTier]}` : ''}
+            </Text>
           </>
         )}
 

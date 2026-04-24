@@ -1,0 +1,85 @@
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+
+import { getHubUrl, setHubUrl } from '@/services/preferences';
+import { isHubReachable } from '@/services/NetworkService';
+
+type ProbeState = 'idle' | 'probing' | 'ok' | 'fail';
+
+export default function HubSettingsScreen() {
+  const { t } = useTranslation();
+  const [url, setUrl] = useState('');
+  const [probe, setProbe] = useState<ProbeState>('idle');
+
+  useEffect(() => {
+    (async () => setUrl(await getHubUrl()))();
+  }, []);
+
+  const save = async () => {
+    await setHubUrl(url.trim());
+    setProbe('probing');
+    setProbe((await isHubReachable()) ? 'ok' : 'fail');
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={styles.body}>
+        <Text style={styles.label}>{t('hub.url_label')}</Text>
+        <TextInput
+          style={styles.input}
+          value={url}
+          onChangeText={setUrl}
+          placeholder="http://192.168.1.100:11434"
+          autoCapitalize="none"
+          keyboardType="url"
+        />
+        <Text style={styles.help}>{t('hub.help')}</Text>
+
+        <TouchableOpacity style={styles.btn} onPress={save}>
+          <Text style={styles.btnText}>{t('hub.save_and_test')}</Text>
+        </TouchableOpacity>
+
+        {probe === 'probing' && <Text style={styles.status}>…</Text>}
+        {probe === 'ok' && <Text style={[styles.status, styles.ok]}>✓ {t('hub.reachable')}</Text>}
+        {probe === 'fail' && (
+          <Text style={[styles.status, styles.fail]}>✗ {t('hub.unreachable')}</Text>
+        )}
+
+        <View style={styles.snippet}>
+          <Text style={styles.snippetTitle}>{t('hub.setup_title')}</Text>
+          <Text style={styles.code}>curl -fsSL https://ollama.com/install.sh | sh</Text>
+          <Text style={styles.code}>ollama pull gemma4:27b</Text>
+          <Text style={styles.code}>ollama serve</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f1f8e9' },
+  body: { padding: 16 },
+  label: { fontWeight: '700', color: '#1b5e20', marginBottom: 6 },
+  input: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 10,
+    fontSize: 15,
+  },
+  help: { color: '#757575', fontSize: 12, marginTop: 6, marginBottom: 16 },
+  btn: { backgroundColor: '#1b5e20', padding: 14, borderRadius: 12, alignItems: 'center' },
+  btnText: { color: '#fff', fontWeight: '700' },
+  status: { textAlign: 'center', marginTop: 12, fontSize: 15 },
+  ok: { color: '#2e7d32' },
+  fail: { color: '#c62828' },
+  snippet: {
+    backgroundColor: '#263238',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  snippetTitle: { color: '#b3e5fc', fontWeight: '700', marginBottom: 6 },
+  code: { color: '#fff', fontFamily: 'Courier', fontSize: 12, marginBottom: 2 },
+});

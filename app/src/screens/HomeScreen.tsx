@@ -7,7 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 
 import { recentDiagnoses, type DiagnosisRow } from '@/services/db';
-import { isOnline } from '@/services/SyncService';
+import { isHubReachable, isOnline } from '@/services/NetworkService';
 import type { RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -17,10 +17,13 @@ export default function HomeScreen({ navigation }: Props) {
   const [recent, setRecent] = useState<DiagnosisRow[]>([]);
   const [online, setOnline] = useState(false);
 
+  const [hubReady, setHubReady] = useState(false);
+
   const refresh = useCallback(async () => {
-    const [rows, net] = await Promise.all([recentDiagnoses(3), isOnline()]);
+    const [rows, net, hub] = await Promise.all([recentDiagnoses(3), isOnline(), isHubReachable()]);
     setRecent(rows);
     setOnline(net);
+    setHubReady(hub);
   }, []);
 
   useFocusEffect(
@@ -54,9 +57,17 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
+        <View style={[styles.badge, styles.badgeLocal]}>
+          <Text style={styles.badgeText}>📱 {t('tier.local')}</Text>
+        </View>
+        {hubReady && (
+          <View style={[styles.badge, styles.badgeHub]}>
+            <Text style={styles.badgeText}>🛰 {t('tier.hub')}</Text>
+          </View>
+        )}
         <View style={[styles.badge, online ? styles.badgeOnline : styles.badgeOffline]}>
           <Text style={styles.badgeText}>
-            {online ? t('home.online_badge') : t('home.offline_badge')}
+            ☁️ {online ? t('home.online_badge') : t('home.offline_badge')}
           </Text>
         </View>
       </View>
@@ -90,6 +101,26 @@ export default function HomeScreen({ navigation }: Props) {
           ))
         )}
 
+        <Text style={styles.sectionTitle}>{t('home.learn_section')}</Text>
+        <View style={styles.row}>
+          <TouchableOpacity
+            style={styles.tile}
+            onPress={() => navigation.navigate('PreventionCalendar')}
+          >
+            <Text style={styles.tileText}>📅 {t('home.calendar')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tile} onPress={() => navigation.navigate('Quiz', {})}>
+            <Text style={styles.tileText}>🧠 {t('home.quiz')}</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
+          style={styles.groupBtn}
+          onPress={() => navigation.navigate('GroupMode')}
+        >
+          <Text style={styles.groupBtnText}>👥 {t('home.group_mode')}</Text>
+          <Text style={styles.groupBtnSub}>{t('home.group_mode_sub')}</Text>
+        </TouchableOpacity>
+
         <View style={styles.row}>
           <TouchableOpacity style={styles.tile} onPress={() => navigation.navigate('FarmLog')}>
             <Text style={styles.tileText}>📘 {t('home.view_log')}</Text>
@@ -105,11 +136,13 @@ export default function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f1f8e9' },
-  header: { padding: 12, alignItems: 'flex-end' },
+  header: { padding: 12, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgeLocal: { backgroundColor: '#1b5e20' },
+  badgeHub: { backgroundColor: '#00838f' },
   badgeOnline: { backgroundColor: '#2e7d32' },
   badgeOffline: { backgroundColor: '#616161' },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
   scroll: { padding: 16, paddingBottom: 48 },
   primaryBtn: {
     backgroundColor: '#1b5e20',
@@ -150,4 +183,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileText: { color: '#1b5e20', fontWeight: '600' },
+  groupBtn: {
+    backgroundColor: '#00838f',
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 12,
+  },
+  groupBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  groupBtnSub: { color: '#b2ebf2', fontSize: 12, marginTop: 2 },
 });
