@@ -77,6 +77,9 @@
   "hub.reachable": "Hub accessible",
   "hub.unreachable": "Hub injoignable — vérifiez le WiFi",
   "hub.setup_title": "Installation sur le hub",
+  "hub.model_label": "Modèle tournant sur le hub",
+  "hub.model_27b_hint": "Plus précis. Machine costaud requise (16+ Go RAM).",
+  "hub.model_e4b_hint": "Plus léger. Fonctionne sur laptop modeste (8 Go RAM).",
 
   "learn.why_title": "Pourquoi cela est arrivé",
   "learn.why_it_happened": "Conditions qui ont causé la maladie",

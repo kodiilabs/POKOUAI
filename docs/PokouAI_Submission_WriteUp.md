@@ -29,14 +29,15 @@ never thinks about any of this — it just works.
 LAYER 1 — PHONE                always available
   Gemma 4 E2B via llama.cpp    1.5 GB GGUF Q4_K_M
                                fits 2–3 GB RAM entry-level Android
-  Premium: E4B variant         auto-selected on ≥4 GB RAM phones
                                → targets llama.cpp Prize
 
          ↕ WiFi only (no internet needed) when near hub
 
-LAYER 2 — COOPERATIVE HUB      available at extension worker's laptop
-  Gemma 4 27B via Ollama       local WiFi, no cloud dependency
-                               → targets Ollama Prize + powers group-mode teaching
+LAYER 2 — COOPERATIVE HUB      extension worker's laptop
+  Gemma 4 via Ollama           operator-picked model:
+    • gemma4:27b               ≥16 GB RAM, max accuracy
+    • gemma4:e4b               ≥8 GB RAM, modest laptop
+                               → targets Ollama Prize + powers group teaching
 
          ↕ when internet is present
 
@@ -57,13 +58,13 @@ the core of the Cactus Prize claim.
 > PokouAI is an offline-first, multilingual AI crop disease advisor for West African smallholder farmers — built on fine-tuned Gemma 4, running locally on entry-level Android phones, with a three-tier routing architecture that keeps a farmer productive whether they have a phone, a cooperative hub, or internet.
 
 ### Cactus Prize ($10K — local-first multi-model routing)
-> PokouAI intelligently routes inference across three local-first tiers: Gemma 4 E2B via llama.cpp on the farmer's phone, Gemma 4 27B via Ollama on the cooperative hub, and cloud inference when internet is available — with zero cloud dependency required at any tier.
+> PokouAI intelligently routes inference across three local-first tiers: Gemma 4 E2B via llama.cpp on the farmer's phone, a hub-operator-selected Gemma 4 (E4B or 27B) via Ollama on the cooperative hub, and cloud inference when internet is available — with zero cloud dependency required at any tier.
 
 ### llama.cpp Prize ($10K — on-device inference)
 > The primary on-device inference runs Gemma 4 E2B in GGUF Q4_K_M format via llama.cpp (~1.5 GB), delivering full multimodal crop disease diagnosis on a 2–3 GB RAM Android phone in rural Ivory Coast with no network connection; an E4B variant is auto-selected when device RAM permits.
 
 ### Ollama Prize ($10K — local server)
-> A cooperative hub running Gemma 4 27B via Ollama serves as a local AI server for surrounding farmers over WiFi — no internet required — providing higher-accuracy diagnosis and powering the extension worker group-teaching mode.
+> A cooperative hub running Gemma 4 via Ollama (27B on beefier hardware or E4B on modest laptops — operator-picked) serves as a local AI server for surrounding farmers over WiFi — no internet required — providing higher-accuracy diagnosis and powering the extension worker group-teaching mode.
 
 ### Unsloth Prize ($10K — fine-tuning)
 > The on-device model is a QLoRA fine-tune of Gemma 4 (E2B and E4B variants) trained with Unsloth on cocoa disease image data, optimised to diagnose black pod rot, frosty pod rot, swollen shoot virus, and vascular streak dieback with treatment guidance in French, Dioula, Baoulé, and English.

@@ -2,10 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import type { DiagnosisResult, LanguageCode } from '@/types';
 import { buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';
-import { getHubUrl } from './preferences';
-
-const HUB_MODEL = 'gemma4:27b';
-const HUB_MODEL_VERSION = 'gemma4-27b-ollama';
+import { getHubModel, getHubUrl } from './preferences';
 
 async function imageToBase64(uri: string): Promise<string> {
   return FileSystem.readAsStringAsync(uri, {
@@ -17,7 +14,7 @@ export async function diagnoseViaHub(
   imageUri: string,
   language: LanguageCode,
 ): Promise<DiagnosisResult> {
-  const hub = await getHubUrl();
+  const [hub, model] = await Promise.all([getHubUrl(), getHubModel()]);
   const prompt = buildPrompt(imageUri, language);
   const imageB64 = await imageToBase64(imageUri);
 
@@ -26,7 +23,7 @@ export async function diagnoseViaHub(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: HUB_MODEL,
+      model,
       system: prompt.system,
       prompt: prompt.user,
       images: [imageB64],
@@ -40,7 +37,7 @@ export async function diagnoseViaHub(
   const text = data.response ?? '';
 
   const confidence = estimateHubConfidence(text);
-  return parseResponse(text, confidence, HUB_MODEL_VERSION, latencyMs);
+  return parseResponse(text, confidence, `ollama/${model}`, latencyMs);
 }
 
 function estimateHubConfidence(text: string): number {

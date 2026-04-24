@@ -3,19 +3,40 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { getHubUrl, setHubUrl } from '@/services/preferences';
+import {
+  getHubModel,
+  getHubUrl,
+  HUB_MODEL_OPTIONS,
+  setHubModel,
+  setHubUrl,
+  type HubModel,
+} from '@/services/preferences';
 import { isHubReachable } from '@/services/NetworkService';
 
 type ProbeState = 'idle' | 'probing' | 'ok' | 'fail';
 
+const MODEL_HINTS: Record<HubModel, string> = {
+  'gemma4:27b': 'hub.model_27b_hint',
+  'gemma4:e4b': 'hub.model_e4b_hint',
+};
+
 export default function HubSettingsScreen() {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
+  const [model, setModel] = useState<HubModel>('gemma4:27b');
   const [probe, setProbe] = useState<ProbeState>('idle');
 
   useEffect(() => {
-    (async () => setUrl(await getHubUrl()))();
+    (async () => {
+      setUrl(await getHubUrl());
+      setModel(await getHubModel());
+    })();
   }, []);
+
+  const pickModel = async (m: HubModel) => {
+    setModel(m);
+    await setHubModel(m);
+  };
 
   const save = async () => {
     await setHubUrl(url.trim());
@@ -47,10 +68,25 @@ export default function HubSettingsScreen() {
           <Text style={[styles.status, styles.fail]}>✗ {t('hub.unreachable')}</Text>
         )}
 
+        <Text style={[styles.label, styles.labelSpaced]}>{t('hub.model_label')}</Text>
+        {HUB_MODEL_OPTIONS.map((m) => (
+          <TouchableOpacity
+            key={m}
+            style={[styles.modelRow, model === m && styles.modelRowActive]}
+            onPress={() => pickModel(m)}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modelName}>{m}</Text>
+              <Text style={styles.modelHint}>{t(MODEL_HINTS[m])}</Text>
+            </View>
+            {model === m && <Text style={styles.check}>✓</Text>}
+          </TouchableOpacity>
+        ))}
+
         <View style={styles.snippet}>
           <Text style={styles.snippetTitle}>{t('hub.setup_title')}</Text>
           <Text style={styles.code}>curl -fsSL https://ollama.com/install.sh | sh</Text>
-          <Text style={styles.code}>ollama pull gemma4:27b</Text>
+          <Text style={styles.code}>ollama pull {model}</Text>
           <Text style={styles.code}>ollama serve</Text>
         </View>
       </View>
@@ -62,6 +98,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f1f8e9' },
   body: { padding: 16 },
   label: { fontWeight: '700', color: '#1b5e20', marginBottom: 6 },
+  labelSpaced: { marginTop: 20 },
+  modelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 6,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  modelRowActive: { borderColor: '#1b5e20' },
+  modelName: { color: '#212121', fontWeight: '700', fontFamily: 'Courier' },
+  modelHint: { color: '#616161', fontSize: 12, marginTop: 2 },
+  check: { color: '#1b5e20', fontWeight: '700', fontSize: 18 },
   input: {
     backgroundColor: '#fff',
     padding: 12,

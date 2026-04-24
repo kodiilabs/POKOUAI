@@ -80,6 +80,9 @@
   "hub.reachable": "[FR→DYU à valider] Hub accessible",
   "hub.unreachable": "[FR→DYU à valider] Hub injoignable",
   "hub.setup_title": "[FR→DYU à valider] Installation sur le hub",
+  "hub.model_label": "[FR→DYU à valider] Modèle tournant sur le hub",
+  "hub.model_27b_hint": "[FR→DYU à valider] Plus précis. Machine costaud requise.",
+  "hub.model_e4b_hint": "[FR→DYU à valider] Plus léger. Laptop modeste.",
 
   "learn.why_title": "[FR→DYU à valider] Pourquoi cela est arrivé",
   "learn.why_it_happened": "[FR→DYU à valider] Conditions qui ont causé la maladie",

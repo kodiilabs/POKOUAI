@@ -8,10 +8,14 @@ const KEYS = {
   lastSync: 'pokouai.last_sync',
   cloudSyncEnabled: 'pokouai.cloud_sync',
   hubUrl: 'pokouai.hub_url',
+  hubModel: 'pokouai.hub_model',
   preferTier: 'pokouai.prefer_tier',
 } as const;
 
 const DEFAULT_HUB_URL = 'http://192.168.1.100:11434';
+export const HUB_MODEL_OPTIONS = ['gemma4:27b', 'gemma4:e4b'] as const;
+export type HubModel = (typeof HUB_MODEL_OPTIONS)[number];
+const DEFAULT_HUB_MODEL: HubModel = 'gemma4:27b';
 
 export async function getCrop(): Promise<CropId> {
   const v = (await AsyncStorage.getItem(KEYS.crop)) as CropId | null;
@@ -53,4 +57,13 @@ export async function getHubUrl(): Promise<string> {
 
 export async function setHubUrl(url: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.hubUrl, url);
+}
+
+export async function getHubModel(): Promise<HubModel> {
+  const v = (await AsyncStorage.getItem(KEYS.hubModel)) as HubModel | null;
+  return v && HUB_MODEL_OPTIONS.includes(v) ? v : DEFAULT_HUB_MODEL;
+}
+
+export async function setHubModel(m: HubModel): Promise<void> {
+  await AsyncStorage.setItem(KEYS.hubModel, m);
 }

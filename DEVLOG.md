@@ -30,3 +30,10 @@
 
 ### Honesty note on the addendum's A5 claims
 The addendum's A5 llama.cpp-prize snippet says "E4B on a 2 GB RAM Android." That is not factually defensible for Q4_K_M (~2.8 GB model + overhead). The shipped default is E2B (~1.5 GB); the submission write-up updates the snippet to reflect what's actually running, with the E4B variant as the auto-selected premium on ≥4 GB phones. Pre-submission review must keep that distinction intact — inaccurate claims against a working prototype are worse than the smaller model.
+
+### Later 2026-04-23 — Hub model is operator-configurable
+- Decision: on-device stays E2B. Hub runs **E4B or 27B** depending on what the cooperative's laptop can host — not every hub operator has a 16 GB RAM machine.
+- `preferences.ts` gains `getHubModel/setHubModel` + `HUB_MODEL_OPTIONS = ['gemma4:27b', 'gemma4:e4b']`, default 27B.
+- `OllamaService` reads the preference on every call and tags `modelVersion` as `ollama/<model>` so the Result screen and submitted telemetry show which tier *and* which hub model answered.
+- `HubSettingsScreen` has a radio-style picker with RAM hints; the install snippet's `ollama pull` line reflects the current choice.
+- Submission write-up + Cactus/Ollama prize blurbs updated to reflect the operator-picked hub model (no hardcoded 27B claim).

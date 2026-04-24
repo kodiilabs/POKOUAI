@@ -77,6 +77,9 @@
   "hub.reachable": "Hub reachable",
   "hub.unreachable": "Hub unreachable — check WiFi",
   "hub.setup_title": "Hub setup",
+  "hub.model_label": "Model running on the hub",
+  "hub.model_27b_hint": "More accurate. Needs beefy hardware (16+ GB RAM).",
+  "hub.model_e4b_hint": "Lighter. Runs on a modest laptop (8 GB RAM).",
 
   "learn.why_title": "Why this happened",
   "learn.why_it_happened": "Conditions that caused the disease",
