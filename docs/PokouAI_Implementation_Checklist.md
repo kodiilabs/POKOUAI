@@ -68,13 +68,18 @@ Goal: App runs on emulator with real inference. Offline mode proven.
 - [ ] Dependencies installed: camera, image-picker, sqlite, llama.cpp, async-storage, i18n (see [.claude.md](../../.claude.md#mobile-app))
 - [ ] Folder structure: `src/screens/`, `src/services/`, `src/types/`, `src/data/`
 
-### App Screens (6 total)
+### App Screens
 - [ ] `OnboardingScreen.tsx`: language + crop selectors, consent, AsyncStorage persistence
-- [ ] `HomeScreen.tsx`: camera button, gallery, offline badge, last 3 diagnoses
-- [ ] `DiagnosisScreen.tsx`: capture + preview, analyze button, progress indicator
-- [ ] `ResultScreen.tsx`: disease name, confidence badge, treatment steps, save + share buttons
-- [ ] `FarmLogScreen.tsx`: SQLite local log, past diagnoses + sync status
-- [ ] `SettingsScreen.tsx`: language toggle, model version, sync date, manual sync
+- [ ] `HomeScreen.tsx`: camera button, gallery, tier badges, last 3 diagnoses, red overdue banner, learn/calendar/quiz/intel-log tiles
+- [ ] `DiagnosisScreen.tsx`: capture + preview, analyze button, progress indicator showing chosen tier
+- [ ] `ResultScreen.tsx`: disease name, confidence + tier badge, inline `HypothesisCard`, treatment steps, "Why?" + "Practice" buttons, share
+- [ ] `FollowUpScreen.tsx`: side-by-side Before/Now thumbnails, comparison panel, outcome buttons, theory ✓/✗, lesson textarea, voice playback
+- [ ] `FarmIntelligenceLogScreen.tsx`: pending loops (overdue red-bordered) + completed loops with lessons + audio playback
+- [ ] `FarmLogScreen.tsx`: SQLite raw log, past diagnoses + sync status
+- [ ] `LearnScreen.tsx`, `PreventionCalendarScreen.tsx`, `QuizScreen.tsx`: education modes
+- [ ] `GroupModeScreen.tsx`: extension-worker entry point (no personal-log persistence)
+- [ ] `HubSettingsScreen.tsx`: Ollama hub URL + model picker (27b / e4b)
+- [ ] `SettingsScreen.tsx`: language toggle, model version, sync date, manual sync, hub link
 
 ### i18n Integration
 - [ ] Language files created: `fr.json`, `dyu.json`, `bci.json`, `en.json`
@@ -83,10 +88,31 @@ Goal: App runs on emulator with real inference. Offline mode proven.
 
 ### Model Integration (LlamaService)
 - [ ] `LlamaService.ts`: load GGUF, inference + streaming, response parsing (disease/confidence/steps)
-- [ ] `promptBuilder.ts`: image + text prompt construction
+- [ ] `promptBuilder.ts`: diagnosis prompt + 2-image comparison prompt construction
 - [ ] GGUF bundled in app (or lazy-download on first launch)
 - [ ] Full pipeline tested: photo → inference → result displayed
 - [ ] **CRITICAL**: Offline test — airplane mode ON, confirm inference works
+
+### 3-Tier Inference Router
+- [ ] `NetworkService.ts`: hub + internet probes with timeout
+- [ ] `OllamaService.ts`: cooperative-hub backend (27B or E4B via Ollama)
+- [ ] `CloudService.ts`: cloud 27B backend stub
+- [ ] `InferenceRouter.ts`: routeInference + routeComparison with fallback chain
+
+### Scientific Farming Loop **CRITICAL for Future-of-Education prize**
+- [ ] `db.ts`: `loops` table joining initial diagnosis → hypothesis → follow-up → outcome → lesson
+- [ ] `loops.ts`: createLoop / setHypothesis / completeLoop / list helpers
+- [ ] `notifications.ts`: schedule day-7 local reminder via `expo-notifications` (no internet)
+- [ ] `voice.ts`: record + playback of hypothesis voice memos (`expo-av`)
+- [ ] `HypothesisCard.tsx`: 4-tile theory + 🎙 voice memo, inline on Result
+- [ ] `FollowUpScreen.tsx`: Day-7 capture → comparative inference → outcome + lesson
+- [ ] `FarmIntelligenceLogScreen.tsx`: pending + completed loops with lessons
+- [ ] Notification deep-link in `App.tsx` → routes `kind:'followup'` to `FollowUp(loopId)`
+- [ ] Red overdue banner on Home as backstop when notification permission denied
+
+### Education Layer
+- [ ] `LearnScreen.tsx`, `PreventionCalendarScreen.tsx`, `QuizScreen.tsx`, `GroupModeScreen.tsx`
+- [ ] `knowledge.ts` exposing causes + Ivorian seasonal calendar + quiz bank
 
 ### SyncService Skeleton
 - [ ] Network detection + queue management (basic implementation)
@@ -112,6 +138,12 @@ Goal: App stable. Demo filmed. Submission draft ready.
 - [ ] Tested on 3 configs: 2GB RAM (low), 4GB (standard), Android 12/13
 - [ ] iOS simulator tested
 - [ ] APK sent to Ivory Coast contact via WhatsApp → fix critical feedback
+
+### Loop end-to-end test (manual, 7 days minimum)
+- [ ] Day 0: take a photo → diagnose → tap a hypothesis tile → record a voice memo → confirm card collapses to "we'll check in 7 days"
+- [ ] Day 7 simulated (set device clock forward, or wait): confirm notification fires, deep-links to FollowUp
+- [ ] Day 7: take comparison photo → comparison panel renders → mark outcome → confirm theory ✓/✗ → enter lesson → save
+- [ ] Verify entry lands in Farm Intelligence Log with the right data
 
 ### Voice Input (bonus — if time)
 - [ ] Integrate `react-native-whisper`

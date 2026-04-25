@@ -63,8 +63,9 @@ PokouAI is a **multimodal, offline-first mobile application** powered by a fine-
 2. **Diagnoses the disease** using on-device vision + language AI
 3. **Explains the treatment** in the farmer's local language (French, Dioula, Baoulé)
 4. **Provides actionable steps** — what to buy, how to apply, when to spray
-5. **Works with zero internet** — the full model runs on the device
-6. **Syncs when internet is available** — uploads anonymised cases to improve the model, downloads updated disease databases
+5. **Closes a 7-day scientific farming loop** — every diagnosis triggers a hypothesis prompt, schedules a follow-up reminder, and accumulates lessons in a personal Farm Intelligence Log
+6. **Works with zero internet** — the full model and the loop run on the device
+7. **Syncs when internet is available** — uploads anonymised cases to improve the model, downloads updated disease databases
 
 **First crop: Cocoa** (Ivory Coast — world's #1 producer)
 **Next crop: Cassava** (most consumed staple in West Africa)
@@ -79,10 +80,11 @@ The Gemma 4 Good Hackathon judges on five axes. PokouAI is engineered to score m
 | Judging Axis | PokouAI's Answer |
 |---|---|
 | **Social impact** | 5M+ farmers in Ivory Coast alone. Directly addresses income, food security, and rural livelihoods. |
-| **Technical innovation** | Multimodal fine-tuned Gemma 4 running fully on-device via llama.cpp. Offline-first sync architecture. Multilingual output including low-resource languages. |
+| **Technical innovation** | Multimodal fine-tuned Gemma 4 running fully on-device via llama.cpp. Offline-first sync architecture. Multilingual output including low-resource languages. Two-image (Day 0 vs Day 7) comparative inference. |
 | **Real-world usability** | Works on a $50 Android phone with no internet. Voice and image input. Output in local languages. |
-| **Constrained environments** | Designed specifically for 2G/no-network rural West Africa. Edge model (Gemma 4 E4B) as default. |
+| **Constrained environments** | Designed specifically for 2G/no-network rural West Africa. Edge model (Gemma 4 E2B as primary, E4B as premium) and 7-day local notifications that don't require connectivity. |
 | **Reproducibility** | Full open-source codebase. Public Kaggle notebook for fine-tuning. Documented dataset pipeline. |
+| **Adaptive learning** | Every diagnosis triggers a hypothesis-test-conclude cycle that compresses the agricultural feedback loop from a season to 7 days, building a Farm Intelligence Log unique to each farmer. |
 
 ### The unfair advantage
 
@@ -179,6 +181,55 @@ The app must deliver 100% of its core value with zero internet. When internet is
 - Download updated disease knowledge and model patches
 - Show regional outbreak alerts
 
+### The 7-Day Scientific Farming Loop (on-device)
+
+Every diagnosis triggers a structured learning cycle that closes in 7 days, fully on-device:
+
+```
+DAY 0  observation        photo → Gemma 4 → disease + treatment
+       hypothesis          farmer taps one of 4 causes (rain / neighbour /
+                           insects / "I don't know") OR records a voice memo
+       schedule            local notification queued for +7 days (no internet)
+
+DAY 7  comparative photo   second photo of the same pod
+       comparison          Gemma 4 receives both images and outputs
+                           EVOLUTION / COMMENTAIRE / ACTIONS / LECON
+       outcome capture     farmer marks stabilised / healed / progressed / unknown
+                           confirms or rejects their Day 0 theory
+                           types a one-line lesson
+
+DAY 7+ Farm Intelligence   the lesson lands in a personal log; surfaces next
+       Log                  season as a preventive reminder when conditions match
+```
+
+The farmer does not need to know the word "hypothesis." They need to answer one
+question before they treat: *"What do you think caused this?"* That single
+prompt is the entire scientific method in practice. Everything else — the
+record, the comparison, the conclusion — PokouAI handles automatically.
+
+**Why this matters technically.** Traditional agricultural training disconnects
+the lesson from the field by months or seasons. PokouAI compresses the loop to
+**7 days** while the farmer still remembers what they did, the visual evidence
+is in front of them, and the connection between action and outcome is
+undeniable. Over one season, a farmer accumulates 10–20 confirmed lessons
+specific to their farm, microclimate, and crop varieties. No agronomist, no
+NGO training, no classroom produces knowledge this specific or this actionable.
+
+**Data model.** A `loops` table (SQLite) joins the initial diagnosis, the
+hypothesis (category + optional voice memo), the comparative response from
+Gemma 4, the outcome the farmer logged, and the lesson learned. Local
+notifications via `expo-notifications` schedule the day-7 reminder without any
+network call. If notification permission is denied or the user dismisses
+the reminder, the Home screen surfaces a red "check now" banner whenever any
+loop is past its scheduled date — a deterministic backstop.
+
+**Group-mode amplification.** An extension worker uses the Farm Intelligence
+Logs from multiple farmers to teach the group: *"Farmer Kofi tested this
+theory in October — here's what he found. Anyone else see the same pattern
+after rain?"* The extension worker is now teaching with real data from real
+farms in the same region. The scientific method becomes a shared community
+practice, not an individual tool.
+
 ---
 
 ## 7. AI Model Strategy
@@ -187,9 +238,9 @@ The app must deliver 100% of its core value with zero internet. When internet is
 
 | Model | Use case | RAM required | When used |
 |---|---|---|---|
-| Gemma 4 E2B (GGUF Q4) | Ultra-low-end devices | ~1.5 GB | Fallback for <2GB RAM phones |
-| Gemma 4 E4B (GGUF Q4_K_M) | Primary on-device model | ~2.5 GB | Default offline model |
-| Gemma 4 27B MoE | Cloud inference | N/A on device | When internet available |
+| Gemma 4 **E2B** (GGUF Q4_K_M) | **Primary on-device model** | ~1.5 GB | Default for the target device (2–3 GB RAM Android) |
+| Gemma 4 E4B (GGUF Q4_K_M) | Premium on-device model | ~2.5 GB | Auto-selected on phones with ≥4 GB RAM |
+| Gemma 4 27B MoE | Cloud inference + Day-7 comparison | N/A on device | When internet is available — used for two-image comparative diagnosis at follow-up |
 
 ### Fine-tuning strategy
 
@@ -207,7 +258,8 @@ The base Gemma 4 model already has strong vision capabilities. Fine-tuning teach
 2. **Ivorian agronomic context** — which fungicides are available in local markets, local brand names
 3. **Multilingual output** — responding naturally in Dioula and Baoulé, not just translating French
 4. **Structured output** — always returning: disease name, confidence, symptoms seen, treatment steps, prevention advice
-5. **Appropriate uncertainty** — saying "I am not certain, consult an agronomist" when confidence is low
+5. **Comparative output** — when given two photos taken 7 days apart, return EVOLUTION (stabilisé/aggravé/guéri/incertain), COMMENTAIRE, ACTIONS, LECON
+6. **Appropriate uncertainty** — saying "I am not certain, consult an agronomist" when confidence is low
 
 ### LoRA adapter architecture for multi-crop
 
@@ -313,32 +365,60 @@ Many farmers have limited literacy. The app supports:
    └── Crop selector (Cocoa — others greyed as "coming soon")
    └── Data sharing consent (opt-in, clear explanation)
 
-2. Home / Diagnosis
+2. Home
+   └── Tier badges (📱 local / 🛰 hub / ☁️ cloud — show what's available)
+   └── Red overdue banner when any loop is past its Day-7 check date
    └── Large "Take Photo" button
    └── Or: "Upload from Gallery"
-   └── Or: "Describe with Voice"
-   └── Recent diagnoses list (last 5)
+   └── Recent diagnoses list (last 3)
+   └── Tiles: Calendar · Quiz · 🔬 My Farm Intelligence
+   └── Group-mode CTA (extension worker)
 
-3. Diagnosis Result
+3. Diagnosis (capture + analyze)
+   └── Image preview, "Analyze" button, progress indicator with chosen tier
+
+4. Diagnosis Result
    └── Disease name (large, in selected language)
-   └── Confidence indicator (high / medium / uncertain)
-   └── Photo with disease region highlighted
+   └── Confidence indicator + tier badge (where inference ran)
+   └── 🔬 "Test your theory" card — 4 tappable causes + 🎙 voice memo
    └── Treatment steps (numbered, simple language)
-   └── "Save to my farm log" button
-   └── "Share with agronomist" button (exports PDF)
+   └── Prevention advice
+   └── "Why?" → Learn screen, "Practice" → Quiz, Share
 
-4. Farm Log
-   └── History of all diagnoses
+5. Day-7 Follow-Up (deep-linked from notification or red Home banner)
+   └── Side-by-side Before / Now thumbnails
+   └── Camera trigger to capture the Day-7 photo
+   └── Comparative diagnosis from Gemma 4 (EVOLUTION / COMMENTAIRE / ACTIONS / LECON)
+   └── Outcome buttons (stabilised / healed / progressed / unknown)
+   └── Theory ✓ / ✗ toggle (was the Day-0 hypothesis correct?)
+   └── One-line lesson textarea
+   └── Replay Day-0 voice memo
+
+6. Farm Intelligence Log
+   └── Pending loops (overdue ones red-bordered, tap to open Day-7 flow)
+   └── Completed loops with the lesson pull-quoted in a yellow box
+   └── Audio playback pill on entries with a voice memo
+
+7. Farm Log
+   └── Raw history of all diagnoses (separate from the curated Intelligence Log)
    └── Filter by date / disease / crop
    └── Sync status indicator
 
-5. Settings
-   └── Language preference
-   └── Crop modules (download/update)
-   └── Model version + last sync date
-   └── Offline mode toggle
-   └── Data sharing toggle
-   └── About / Privacy policy
+8. Group Mode
+   └── Extension-worker-only flow that runs diagnosis without saving to the
+       personal log — designed for live teaching with a group of farmers
+
+9. Learn / Prevention Calendar / Quiz
+   └── "Why this happened" cause explanation tied to the latest diagnosis
+   └── Seasonal action calendar by month for cocoa in Côte d'Ivoire
+   └── Spaced-repetition Q&A keyed off the farmer's recent diagnoses
+
+10. Settings (incl. Hub)
+    └── Language preference, crop module status
+    └── Cooperative hub URL + model picker (gemma4:27b vs gemma4:e4b on Ollama)
+    └── Model version + last sync date
+    └── Cloud sync toggle, data sharing toggle
+    └── About / Privacy policy
 ```
 
 ### llama.cpp integration
@@ -552,26 +632,41 @@ PokouAI/
 │   │   │   ├── HomeScreen.tsx
 │   │   │   ├── DiagnosisScreen.tsx
 │   │   │   ├── ResultScreen.tsx
-│   │   │   ├── FarmLogScreen.tsx
+│   │   │   ├── FollowUpScreen.tsx              # Day-7 comparative capture
+│   │   │   ├── FarmIntelligenceLogScreen.tsx   # Curated lessons (loops)
+│   │   │   ├── FarmLogScreen.tsx               # Raw diagnoses log
+│   │   │   ├── LearnScreen.tsx                 # "Why this happened"
+│   │   │   ├── PreventionCalendarScreen.tsx    # Seasonal calendar
+│   │   │   ├── QuizScreen.tsx                  # Spaced repetition
+│   │   │   ├── GroupModeScreen.tsx             # Extension worker mode
+│   │   │   ├── HubSettingsScreen.tsx           # Cooperative hub config
 │   │   │   └── SettingsScreen.tsx
 │   │   ├── components/
-│   │   │   ├── CameraCapture.tsx
-│   │   │   ├── DiagnosisCard.tsx
-│   │   │   ├── OfflineBadge.tsx
-│   │   │   └── SyncIndicator.tsx
+│   │   │   └── HypothesisCard.tsx              # Inline on Result screen
 │   │   ├── services/
-│   │   │   ├── LlamaService.ts      # llama.cpp wrapper
-│   │   │   ├── SyncService.ts       # Offline sync logic
-│   │   │   ├── StorageService.ts    # Local DB (SQLite)
-│   │   │   └── WhisperService.ts    # Voice input
+│   │   │   ├── LlamaService.ts                 # llama.cpp wrapper
+│   │   │   ├── OllamaService.ts                # Cooperative-hub backend
+│   │   │   ├── CloudService.ts                 # Cloud 27B backend
+│   │   │   ├── InferenceRouter.ts              # 3-tier router + comparison
+│   │   │   ├── NetworkService.ts               # Hub + internet probes
+│   │   │   ├── SyncService.ts                  # Offline sync logic
+│   │   │   ├── db.ts                           # SQLite (diagnoses + loops)
+│   │   │   ├── loops.ts                        # Loop CRUD (hypothesis/follow-up)
+│   │   │   ├── notifications.ts                # 7-day local reminders
+│   │   │   ├── voice.ts                        # Hypothesis voice memo
+│   │   │   ├── knowledge.ts                    # Calendar + quiz bank
+│   │   │   ├── promptBuilder.ts                # Diagnosis + comparison prompts
+│   │   │   ├── responseParser.ts
+│   │   │   └── preferences.ts                  # Language, crop, hub URL
 │   │   ├── i18n/
 │   │   │   ├── fr.json              # French
 │   │   │   ├── dyu.json             # Dioula
 │   │   │   ├── bci.json             # Baoulé
 │   │   │   └── en.json              # English
-│   │   └── utils/
-│   │       ├── imageUtils.ts
-│   │       └── promptBuilder.ts
+│   │   ├── data/
+│   │   │   └── cocoa_diseases.json  # Bundled disease KB
+│   │   └── types/
+│   │       └── index.ts
 │   ├── assets/
 │   │   └── models/                  # GGUF model files (gitignored, downloaded at install)
 │   ├── app.json
@@ -689,11 +784,14 @@ This section maps every judging criterion to a specific PokouAI deliverable. **D
 |---|---|---|
 | 0–10s | A cocoa farm. Sick pods. Real person. Ivory Coast. | Judges feel the problem before you say a word. |
 | 10–20s | The farmer takes a photo on their phone. | No narration needed. The action is the story. |
-| 20–35s | The app loading indicator. Then: diagnosis in Dioula. Treatment steps. | Prove it works offline — airplane mode badge visible on phone. |
-| 35–50s | Voice: the farmer reads the treatment in Dioula. | Language authenticity. Emotional resonance. |
-| 50–65s | Split: Mac emulator + Kaggle training notebook. | Technical proof. Shows fine-tuning is real. |
-| 65–80s | Text: "5M farmers. 40% of world's cocoa. Built in Ivory Coast." | Impact frame. Numbers. Origin story. |
-| 80–90s | GitHub repo URL. Kaggle notebook URL. PokouAI logo. | Submission proof. |
+| 20–32s | The app loading indicator. Then: diagnosis in Dioula. Treatment steps. | Prove it works offline — airplane mode badge visible on phone. |
+| 32–45s | The 🔬 "Test your theory" card appears. Farmer taps "Rain". Card collapses to "we'll check in 7 days". | Sells the scientific loop in one beat. |
+| 45–55s | Time-lapse cut. Day 7. Notification fires. Farmer takes second photo. Side-by-side with Day 0. EVOLUTION: stabilisé. | Shows the loop closing — the demo's emotional climax. |
+| 55–65s | Farm Intelligence Log opens. The lesson "After 3 days of rain, inspect shaded pods within 48h" is highlighted. | The product's real output is knowledge, not just a one-shot diagnosis. |
+| 65–75s | Voice: the farmer reads the treatment in Dioula. | Language authenticity. |
+| 75–82s | Split: Mac emulator + Kaggle training notebook. | Technical proof. Shows fine-tuning is real. |
+| 82–88s | Text: "5M farmers. 40% of world's cocoa. Built in Ivory Coast." | Impact frame. |
+| 88–90s | GitHub repo URL. Kaggle notebook URL. PokouAI logo. | Submission proof. |
 
 ### Critical: airplane mode
 
@@ -720,18 +818,23 @@ in under 10 seconds, with zero internet connectivity required.
 
 Gemma 4 features used:
 - Multimodal vision: image of diseased crop → diagnosis
-- On-device inference via Gemma 4 E4B (GGUF Q4_K_M via llama.cpp)
+- Two-image comparative inference at Day 7 follow-up
+- On-device inference via Gemma 4 E2B / E4B (GGUF Q4_K_M via llama.cpp)
 - Fine-tuned with Unsloth QLoRA on cocoa disease dataset
 - LoRA adapter architecture for multi-crop extensibility
 - Low-resource language output (Dioula, Baoulé)
+- Structured output schema (MALADIE / SYMPTOMES / TRAITEMENT / PREVENTION
+  for diagnosis; EVOLUTION / COMMENTAIRE / ACTIONS / LECON for comparison)
 
 Technical highlights:
-- Model: Gemma 4 E4B fine-tuned with Unsloth (Unsloth prize eligible)
+- Model: Gemma 4 E2B (primary) + E4B (premium) fine-tuned with Unsloth
 - Framework: React Native + Expo (iOS + Android)
 - Offline inference: llama.cpp GGUF
+- 3-tier routing: phone → cooperative Ollama hub → cloud 27B
 - Sync: offline-first with background sync when connected
 - Languages: French, Dioula, Baoulé, English
-- Voice: Whisper-small on-device for voice input
+- Voice memo for hypothesis (offline; Whisper STT planned v1.1)
+- 7-day scientific farming loop with local notifications, no internet required
 
 Impact:
 - Primary: 5M+ cocoa farmers in Ivory Coast

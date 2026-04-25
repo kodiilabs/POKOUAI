@@ -76,3 +76,10 @@ Same day as Addendum v2; this addresses the limitations explicitly.
 - Local-tier comparison isn't a true two-image diff. It's the same text-prompt pattern with comparison framing, fed only the day-7 image. The UI presents side-by-side thumbnails so the *farmer* still does the visual comparison; the model output supplements but doesn't replace human judgment. When the React Native llama binding gains multi-image support (`react-native-llama` 0.5+ has it on the roadmap) this becomes a one-line change.
 - Voice memos are saved but not yet synced to the cloud or transcribed. Offline-only for now. Storage is `expo-file-system` document directory.
 - The cloud `/v1/compare` endpoint (`api.pokou.ai/v1/compare`) is referenced in `CloudService` but does not exist server-side yet. If cloud is the chosen tier and the call 404s, the router falls back to local single-image comparison.
+
+## 2026-04-25 — Folded the v2 addendum into the project spec
+- Deleted `docs/PokouAI_Addendum_v2.md`. Its content now lives where it should have lived from day one:
+  - `PokouAI_Project_Documentation.md` §2 (loop in solution overview), §3 (judging axis), §6 (new "7-Day Scientific Farming Loop" subsection), §10 (FollowUp + IntelligenceLog screens), §13 (folder structure), §16 (demo storyboard beats), §17 (submission template).
+  - `PokouAI_Implementation_Checklist.md` Week 3 (loop sections, education layer, 3-tier router) and Week 4 (manual loop end-to-end test).
+  - `README.md` and `.claude.md` lost the "(Addendum v2)" parenthetical; the loop is now referenced as the core product.
+- DEVLOG entries from 2026-04-24 stay verbatim — they record the actual history. The submission write-up keeps its claims-audit table.

@@ -80,7 +80,7 @@ Every diagnosis is a teaching moment. Modes on top of the diagnosis flow:
 - **Quiz** — spaced-repetition Q&A keyed to the farmer's recent diagnoses ([QuizScreen.tsx](app/src/screens/QuizScreen.tsx))
 - **Group mode** — extension worker UI for teaching a group of farmers ([GroupModeScreen.tsx](app/src/screens/GroupModeScreen.tsx))
 
-### Scientific farming loop (Addendum v2)
+### Scientific farming loop
 
 Compresses the agricultural feedback loop from a season to 7 days, turning each diagnosis into a hypothesis-test-conclude cycle:
 
@@ -95,7 +95,7 @@ Next season — recall   → lesson surfaces as preventive reminder when conditi
 
 Implementation: [HypothesisCard.tsx](app/src/components/HypothesisCard.tsx) inline on Result screen (4 theory tiles + 🎙 voice memo via [voice.ts](app/src/services/voice.ts)), [FollowUpScreen.tsx](app/src/screens/FollowUpScreen.tsx) for the day-7 capture (calls [routeComparison](app/src/services/InferenceRouter.ts) — hub + cloud get both images, local llama.cpp falls back to single-image comparison-aware prompt), [FarmIntelligenceLogScreen.tsx](app/src/screens/FarmIntelligenceLogScreen.tsx) for the curated lessons with audio playback. Local notifications via [notifications.ts](app/src/services/notifications.ts) — no internet required. Permission backstop: Home shows a red overdue banner if any pending loop is past its check date. Data model: a `loops` table linking initial diagnosis → hypothesis (category + voice memo) → comparison response → outcome → lesson.
 
-Full positioning in [docs/PokouAI_Submission_WriteUp.md](docs/PokouAI_Submission_WriteUp.md) and rationale in [docs/PokouAI_Addendum_v2.md](docs/PokouAI_Addendum_v2.md).
+Full positioning in [docs/PokouAI_Submission_WriteUp.md](docs/PokouAI_Submission_WriteUp.md). Architecture, screens, and folder layout: [docs/PokouAI_Project_Documentation.md](docs/PokouAI_Project_Documentation.md).
 
 ---
 

@@ -106,7 +106,7 @@ the diagnosis. Then add this paragraph to the technical section:
    saving to the personal log (`GroupModeScreen`, passes
    `groupMode: true` to `DiagnosisScreen`).
 
-### The scientific farming loop (Addendum v2)
+### The scientific farming loop
 The headline education feature. Every diagnosis automatically becomes a
 structured hypothesis-test-conclude cycle:
 
