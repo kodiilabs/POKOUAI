@@ -25,6 +25,8 @@
   "home.group_mode_sub": "For extension workers — lesson with a group of farmers",
   "home.intel_log": "My farm intelligence",
   "home.intel_sub": "Your theories, your results, your lessons. One season = a pocket agronomist.",
+  "home.overdue_title": "{{count}} check(s) due now",
+  "home.overdue_body": "Tap to open the oldest. Take a photo of the same pod.",
 
   "tier.local": "Local",
   "tier.hub": "Hub",
@@ -119,6 +121,9 @@
   "hypothesis.scheduled_body": "On {{date}} we'll check together if your treatment worked.",
   "hypothesis.your_theory": "Your theory",
   "hypothesis.reminder_body": "7 days ago you treated {{disease}}. Take a photo of the same area to check.",
+  "hypothesis.start_voice": "Record my voice",
+  "hypothesis.stop_voice": "Stop recording",
+  "hypothesis.play_voice": "Play my hypothesis",
 
   "followup.title": "Day 7 check",
   "followup.subtitle": "Initial diagnosis: {{disease}}. Let's compare with today.",
@@ -136,6 +141,9 @@
   "followup.lesson_q": "What lesson for next season?",
   "followup.lesson_placeholder": "e.g. after 3 rainy days, inspect shaded pods within 48h.",
   "followup.save_to_log": "Save to my intelligence log",
+  "followup.ai_compare": "PokouAI compares the two photos",
+  "followup.compare_failed": "Comparison unavailable — go by what you see.",
+  "followup.play_hypothesis_audio": "Replay your Day 0 hypothesis",
 
   "intel.empty": "No loops yet. Run a diagnosis, state a theory, and come back in 7 days for your first lesson.",
   "intel.summary": "{{count}} confirmed lesson(s) · {{pending}} pending",
@@ -144,6 +152,7 @@
   "intel.overdue": "Due now",
   "intel.your_theory": "Your theory",
   "intel.lesson": "Lesson learned",
+  "intel.play_voice": "Play hypothesis",
 
   "lang.fr": "Français",
   "lang.dyu": "Dioula",

@@ -7,6 +7,8 @@ interface LoopRow {
   followup_diagnosis_id: number | null;
   hypothesis_category: string | null;
   hypothesis_note: string | null;
+  hypothesis_audio_uri: string | null;
+  comparison_response: string | null;
   scheduled_for: string;
   notification_id: string | null;
   outcome: string | null;
@@ -23,6 +25,8 @@ function rowToLoop(r: LoopRow): Loop {
     followupDiagnosisId: r.followup_diagnosis_id,
     hypothesisCategory: (r.hypothesis_category as HypothesisCategory | null) ?? null,
     hypothesisNote: r.hypothesis_note,
+    hypothesisAudioUri: r.hypothesis_audio_uri,
+    comparisonResponse: r.comparison_response,
     scheduledFor: r.scheduled_for,
     notificationId: r.notification_id,
     outcome: (r.outcome as LoopOutcome | null) ?? null,
@@ -52,11 +56,30 @@ export async function setHypothesis(
   loopId: number,
   category: HypothesisCategory,
   note: string | null,
+  audioUri: string | null = null,
 ): Promise<void> {
   const conn = await initDb();
   await conn.runAsync(
-    `UPDATE loops SET hypothesis_category = ?, hypothesis_note = ? WHERE id = ?`,
-    [category, note, loopId],
+    `UPDATE loops
+     SET hypothesis_category = ?, hypothesis_note = ?, hypothesis_audio_uri = COALESCE(?, hypothesis_audio_uri)
+     WHERE id = ?`,
+    [category, note, audioUri, loopId],
+  );
+}
+
+export async function setHypothesisAudio(loopId: number, audioUri: string): Promise<void> {
+  const conn = await initDb();
+  await conn.runAsync(
+    `UPDATE loops SET hypothesis_audio_uri = ? WHERE id = ?`,
+    [audioUri, loopId],
+  );
+}
+
+export async function setComparisonResponse(loopId: number, response: string): Promise<void> {
+  const conn = await initDb();
+  await conn.runAsync(
+    `UPDATE loops SET comparison_response = ? WHERE id = ?`,
+    [response, loopId],
   );
 }
 

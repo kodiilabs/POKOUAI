@@ -115,7 +115,7 @@ structured hypothesis-test-conclude cycle:
 | Day 0 — observation | `DiagnosisScreen` | Photo → disease + confidence + treatment |
 | Day 0 — hypothesis | `HypothesisCard` on `ResultScreen` | Farmer taps one of 4 causes (rain / neighbour / insects / unknown). Treatment is shown regardless. |
 | Day 0 — schedule | `notifications.ts` | Local notification queued for +7 days (no internet). |
-| Day 7 — follow-up | `FollowUpScreen` (deep-link from notification tap) | Camera → comparative diagnosis → outcome (stabilised / healed / progressed / unknown) + theory ✓/✗ + 1-line lesson. |
+| Day 7 — follow-up | `FollowUpScreen` (deep-link from notification tap or red Home banner if overdue) | Camera → **two-image comparison** through `routeComparison` (hub + cloud receive before+after; local llama.cpp falls back to single-image with comparison-aware prompt) → outcome (stabilised / healed / progressed / unknown) + theory ✓/✗ + 1-line lesson. Day 0 voice memo can be replayed during the check. |
 | Day 7+ — recall | `FarmIntelligenceLogScreen` | Lessons accumulate. Pending loops show as "Due now" once their day arrives. |
 
 The data model is one `loops` table that joins initial diagnosis →
@@ -140,6 +140,9 @@ never heard the word "hypothesis."
 | Hypothesis prompt | ✅ | `HypothesisCard` records 4-option theory + "I don't know"; loop row created |
 | 7-day local notification | ✅ | `expo-notifications` schedules without internet; deep-link handler in `App.tsx` |
 | Day-7 follow-up + lesson | ✅ | `FollowUpScreen` captures comparative outcome + free-text lesson |
+| Two-image comparison | ✅ (hub/cloud), 🟡 (local) | Hub + cloud get both images via `routeComparison`. Local llama.cpp uses single-image comparison-aware prompt — honest fallback, not pixel-level diff. |
+| Voice memo for hypothesis | ✅ | `expo-av` records on tap; playback in HypothesisCard, FollowUp, and Intelligence Log. **No STT** — the recording is the recording. |
+| Overdue backstop | ✅ | Red Home banner surfaces pending loops past their check date — failsafe when notification permission was denied. |
 | Farm Intelligence Log | ✅ | Pending + completed loops listed; lessons accumulated per farmer |
 | Fine-tuned model exists | 🟡 | Training **in progress** on Kaggle (T4 x2, E2B variant, ~3-4h) |
 | Ivorian field photos in training data | ❌ | Dependent on contact outreach |

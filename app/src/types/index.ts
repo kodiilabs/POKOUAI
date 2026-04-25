@@ -53,6 +53,8 @@ export interface Loop {
   followupDiagnosisId: number | null;
   hypothesisCategory: HypothesisCategory | null;
   hypothesisNote: string | null;
+  hypothesisAudioUri: string | null;
+  comparisonResponse: string | null;
   scheduledFor: string;
   notificationId: string | null;
   outcome: LoopOutcome | null;

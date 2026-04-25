@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import type { DiagnosisResult, LanguageCode } from '@/types';
-import { buildPrompt } from './promptBuilder';
+import { buildComparisonPromptSingle, buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';
 
 const MODEL_VERSION = 'cocoa_v1_e2b';
@@ -125,6 +125,38 @@ function estimateConfidence(text: string): number {
   const base = present / sections.length;
   if (/incertain|non analysable|non identifi/i.test(text)) return Math.min(base * 0.6, 0.45);
   return Math.max(0.5, base);
+}
+
+export interface ComparisonResult {
+  text: string;
+  modelVersion: string;
+  latencyMs: number;
+}
+
+/** Local llama.cpp can only handle one image; we feed it the day-7 photo with comparison-aware prompt. */
+export async function compareLocal(
+  _beforeUri: string,
+  afterUri: string,
+  language: LanguageCode,
+  diseaseName: string,
+): Promise<ComparisonResult> {
+  const ctx = await loadModel();
+  const prompt = buildComparisonPromptSingle(afterUri, language, diseaseName);
+  const full = `${prompt.system}\n\n${prompt.user}`;
+
+  const started = Date.now();
+  const result = await ctx.completion({
+    prompt: full,
+    image_path: afterUri,
+    n_predict: 250,
+    temperature: 0.2,
+    stop: ['</s>', '<end_of_turn>'],
+  });
+  return {
+    text: result.text,
+    modelVersion: `${MODEL_VERSION}-compare-1img`,
+    latencyMs: Date.now() - started,
+  };
 }
 
 export const __test = { estimateConfidence };

@@ -5,11 +5,12 @@ import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { getDiagnosis, insertDiagnosis, type DiagnosisRow } from '@/services/db';
-import { completeLoop, getLoop } from '@/services/loops';
-import { routeInference } from '@/services/InferenceRouter';
+import { getDiagnosis, type DiagnosisRow } from '@/services/db';
+import { completeLoop, getLoop, setComparisonResponse } from '@/services/loops';
+import { routeComparison } from '@/services/InferenceRouter';
+import { play } from '@/services/voice';
 import { currentLanguage } from '@/i18n';
-import type { Loop, LoopOutcome, RootStackParamList } from '@/types';
+import type { InferenceTier, Loop, LoopOutcome, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FollowUp'>;
 
@@ -25,8 +26,9 @@ export default function FollowUpScreen({ route, navigation }: Props) {
   const { loopId } = route.params;
   const [loop, setLoop] = useState<Loop | null>(null);
   const [initial, setInitial] = useState<DiagnosisRow | null>(null);
-  const [followupId, setFollowupId] = useState<number | null>(null);
   const [followupImage, setFollowupImage] = useState<string | null>(null);
+  const [comparisonText, setComparisonText] = useState<string | null>(null);
+  const [comparisonTier, setComparisonTier] = useState<InferenceTier | null>(null);
   const [outcome, setOutcome] = useState<LoopOutcome | null>(null);
   const [confirmed, setConfirmed] = useState<boolean | null>(null);
   const [lesson, setLesson] = useState('');
@@ -42,16 +44,26 @@ export default function FollowUpScreen({ route, navigation }: Props) {
   }, [loopId]);
 
   const takeFollowupPhoto = async () => {
+    if (!initial) return;
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') return;
     const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
     if (result.canceled || !result.assets[0]) return;
     setBusy(true);
     setFollowupImage(result.assets[0].uri);
+    setComparisonText(null);
     try {
-      const routed = await routeInference(result.assets[0].uri, currentLanguage());
-      const id = await insertDiagnosis(result.assets[0].uri, currentLanguage(), routed, routed.tier);
-      setFollowupId(id);
+      const routed = await routeComparison(
+        initial.imageUri,
+        result.assets[0].uri,
+        currentLanguage(),
+        initial.diseaseName,
+        { onTierChosen: setComparisonTier },
+      );
+      setComparisonText(routed.text);
+      await setComparisonResponse(loopId, routed.text);
+    } catch {
+      setComparisonText(t('followup.compare_failed'));
     } finally {
       setBusy(false);
     }
@@ -61,7 +73,7 @@ export default function FollowUpScreen({ route, navigation }: Props) {
     if (!loop || !outcome) return;
     setBusy(true);
     await completeLoop(loop.id, {
-      followupDiagnosisId: followupId,
+      followupDiagnosisId: null,
       outcome,
       hypothesisConfirmed: confirmed,
       lesson: lesson.trim(),
@@ -101,6 +113,25 @@ export default function FollowUpScreen({ route, navigation }: Props) {
             )}
           </View>
         </View>
+
+        {comparisonText && (
+          <View style={styles.compareBox}>
+            <Text style={styles.compareTitle}>
+              🔬 {t('followup.ai_compare')}
+              {comparisonTier && ` · ${comparisonTier}`}
+            </Text>
+            <Text style={styles.compareBody}>{comparisonText}</Text>
+          </View>
+        )}
+
+        {loop.hypothesisAudioUri && (
+          <TouchableOpacity
+            style={styles.audioBtn}
+            onPress={() => loop.hypothesisAudioUri && play(loop.hypothesisAudioUri)}
+          >
+            <Text style={styles.audioBtnText}>▶ {t('followup.play_hypothesis_audio')}</Text>
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.sectionTitle}>{t('followup.outcome_q')}</Text>
         <View style={styles.outcomeRow}>
@@ -225,4 +256,24 @@ const styles = StyleSheet.create({
   },
   ctaDisabled: { opacity: 0.4 },
   ctaText: { color: '#fff', fontWeight: '700' },
+  compareBox: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1565c0',
+    marginBottom: 12,
+  },
+  compareTitle: { fontWeight: '700', color: '#1565c0', marginBottom: 4, fontSize: 13 },
+  compareBody: { color: '#0d47a1', lineHeight: 20 },
+  audioBtn: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1565c0',
+    marginBottom: 12,
+  },
+  audioBtnText: { color: '#1565c0', fontWeight: '600' },
 });

@@ -25,6 +25,8 @@
   "home.group_mode_sub": "Pour agents vulgarisateurs — cours avec un groupe de paysans",
   "home.intel_log": "Mon intelligence ferme",
   "home.intel_sub": "Vos hypothèses, vos résultats, vos leçons. Une saison = un agronome de poche.",
+  "home.overdue_title": "{{count}} vérification(s) à faire",
+  "home.overdue_body": "Touchez pour ouvrir la plus ancienne. Reprenez une photo de la même cabosse.",
 
   "tier.local": "Local",
   "tier.hub": "Hub",
@@ -119,6 +121,9 @@
   "hypothesis.scheduled_body": "Le {{date}} on vérifiera ensemble si votre traitement marche.",
   "hypothesis.your_theory": "Votre théorie",
   "hypothesis.reminder_body": "Il y a 7 jours vous avez traité {{disease}}. Reprenez une photo de la même zone pour vérifier.",
+  "hypothesis.start_voice": "Enregistrer ma voix",
+  "hypothesis.stop_voice": "Arrêter l'enregistrement",
+  "hypothesis.play_voice": "Écouter mon hypothèse",
 
   "followup.title": "Vérification — Jour 7",
   "followup.subtitle": "Diagnostic initial : {{disease}}. Comparons avec aujourd'hui.",
@@ -136,6 +141,9 @@
   "followup.lesson_q": "Quelle leçon retenir pour la prochaine saison ?",
   "followup.lesson_placeholder": "Ex : après 3 jours de pluie, inspecter les cabosses ombragées sous 48h.",
   "followup.save_to_log": "Enregistrer dans mon journal d'intelligence",
+  "followup.ai_compare": "PokouAI compare les deux photos",
+  "followup.compare_failed": "Comparaison indisponible — basez-vous sur ce que vous voyez.",
+  "followup.play_hypothesis_audio": "Réécouter votre hypothèse du Jour 0",
 
   "intel.empty": "Aucune boucle pour le moment. Faites un diagnostic, formulez une hypothèse, et revenez dans 7 jours pour la première leçon.",
   "intel.summary": "{{count}} leçon(s) confirmée(s) · {{pending}} en attente",
@@ -144,6 +152,7 @@
   "intel.overdue": "À faire",
   "intel.your_theory": "Votre théorie",
   "intel.lesson": "Leçon retenue",
+  "intel.play_voice": "Écouter l'hypothèse",
 
   "lang.fr": "Français",
   "lang.dyu": "Dioula",

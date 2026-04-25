@@ -28,6 +28,8 @@
   "home.group_mode_sub": "[FR→DYU à valider] Pour agents vulgarisateurs.",
   "home.intel_log": "[FR→DYU à valider] Mon intelligence ferme",
   "home.intel_sub": "[FR→DYU à valider] Vos hypothèses, vos résultats, vos leçons.",
+  "home.overdue_title": "[FR→DYU à valider] {{count}} vérification(s) à faire",
+  "home.overdue_body": "[FR→DYU à valider] Touchez pour ouvrir la plus ancienne.",
 
   "tier.local": "[FR→DYU à valider] Local",
   "tier.hub": "[FR→DYU à valider] Hub",
@@ -122,6 +124,9 @@
   "hypothesis.scheduled_body": "[FR→DYU à valider] Le {{date}} on vérifiera ensemble.",
   "hypothesis.your_theory": "[FR→DYU à valider] Votre théorie",
   "hypothesis.reminder_body": "[FR→DYU à valider] Il y a 7 jours vous avez traité {{disease}}. Reprenez une photo.",
+  "hypothesis.start_voice": "[FR→DYU à valider] Enregistrer ma voix",
+  "hypothesis.stop_voice": "[FR→DYU à valider] Arrêter l'enregistrement",
+  "hypothesis.play_voice": "[FR→DYU à valider] Écouter mon hypothèse",
 
   "followup.title": "[FR→DYU à valider] Vérification — Jour 7",
   "followup.subtitle": "[FR→DYU à valider] Diagnostic initial : {{disease}}.",
@@ -139,6 +144,9 @@
   "followup.lesson_q": "[FR→DYU à valider] Quelle leçon retenir ?",
   "followup.lesson_placeholder": "[FR→DYU à valider] Ex : après 3 jours de pluie, inspecter les cabosses sous 48h.",
   "followup.save_to_log": "[FR→DYU à valider] Enregistrer dans mon journal d'intelligence",
+  "followup.ai_compare": "[FR→DYU à valider] PokouAI compare les deux photos",
+  "followup.compare_failed": "[FR→DYU à valider] Comparaison indisponible.",
+  "followup.play_hypothesis_audio": "[FR→DYU à valider] Réécouter votre hypothèse du Jour 0",
 
   "intel.empty": "[FR→DYU à valider] Aucune boucle pour le moment.",
   "intel.summary": "[FR→DYU à valider] {{count}} leçon(s) · {{pending}} en attente",
@@ -147,6 +155,7 @@
   "intel.overdue": "[FR→DYU à valider] À faire",
   "intel.your_theory": "[FR→DYU à valider] Votre théorie",
   "intel.lesson": "[FR→DYU à valider] Leçon retenue",
+  "intel.play_voice": "[FR→DYU à valider] Écouter l'hypothèse",
 
   "lang.fr": "Français",
   "lang.dyu": "Dioula",

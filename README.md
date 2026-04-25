@@ -93,7 +93,7 @@ Day 7 — lesson         → farmer types one-line lesson; saved to Farm Intelli
 Next season — recall   → lesson surfaces as preventive reminder when conditions match
 ```
 
-Implementation: [HypothesisCard.tsx](app/src/components/HypothesisCard.tsx) inline on Result screen, [FollowUpScreen.tsx](app/src/screens/FollowUpScreen.tsx) for the day-7 capture, [FarmIntelligenceLogScreen.tsx](app/src/screens/FarmIntelligenceLogScreen.tsx) for the curated lessons. Local notifications via [notifications.ts](app/src/services/notifications.ts) — no internet required to schedule or fire. Data model: a `loops` table linking initial diagnosis → hypothesis → follow-up diagnosis → outcome → lesson.
+Implementation: [HypothesisCard.tsx](app/src/components/HypothesisCard.tsx) inline on Result screen (4 theory tiles + 🎙 voice memo via [voice.ts](app/src/services/voice.ts)), [FollowUpScreen.tsx](app/src/screens/FollowUpScreen.tsx) for the day-7 capture (calls [routeComparison](app/src/services/InferenceRouter.ts) — hub + cloud get both images, local llama.cpp falls back to single-image comparison-aware prompt), [FarmIntelligenceLogScreen.tsx](app/src/screens/FarmIntelligenceLogScreen.tsx) for the curated lessons with audio playback. Local notifications via [notifications.ts](app/src/services/notifications.ts) — no internet required. Permission backstop: Home shows a red overdue banner if any pending loop is past its check date. Data model: a `loops` table linking initial diagnosis → hypothesis (category + voice memo) → comparison response → outcome → lesson.
 
 Full positioning in [docs/PokouAI_Submission_WriteUp.md](docs/PokouAI_Submission_WriteUp.md) and rationale in [docs/PokouAI_Addendum_v2.md](docs/PokouAI_Addendum_v2.md).
 

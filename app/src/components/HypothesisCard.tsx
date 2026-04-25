@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { createLoop, getLoopByDiagnosis, setHypothesis } from '@/services/loops';
+import { createLoop, getLoopByDiagnosis, setHypothesis, setHypothesisAudio } from '@/services/loops';
 import { scheduleFollowUpReminder } from '@/services/notifications';
+import { play, startRecording, type RecordingHandle } from '@/services/voice';
 import type { HypothesisCategory, Loop } from '@/types';
 
 interface Props {
@@ -22,31 +23,61 @@ export default function HypothesisCard({ diagnosisId, diseaseName }: Props) {
   const { t } = useTranslation();
   const [loop, setLoop] = useState<Loop | null>(null);
   const [busy, setBusy] = useState(false);
+  const [recHandle, setRecHandle] = useState<RecordingHandle | null>(null);
 
   useEffect(() => {
     (async () => setLoop(await getLoopByDiagnosis(diagnosisId)))();
   }, [diagnosisId]);
 
+  const ensureLoop = async (): Promise<number> => {
+    const existing = await getLoopByDiagnosis(diagnosisId);
+    if (existing) return existing.id;
+    let scheduledFor: string;
+    let notificationId: string | null = null;
+    try {
+      const sched = await scheduleFollowUpReminder({
+        loopId: 0,
+        diseaseName,
+        body: t('hypothesis.reminder_body', { disease: diseaseName }),
+      });
+      scheduledFor = sched.firesAt;
+      notificationId = sched.id;
+    } catch {
+      scheduledFor = new Date(Date.now() + 7 * 86400_000).toISOString();
+    }
+    return createLoop({ diagnosisId, scheduledFor, notificationId });
+  };
+
   const pick = async (cat: HypothesisCategory) => {
     setBusy(true);
     try {
-      let scheduledFor: string;
-      let notificationId: string | null = null;
-      try {
-        const sched = await scheduleFollowUpReminder({
-          loopId: 0,
-          diseaseName,
-          body: t('hypothesis.reminder_body', { disease: diseaseName }),
-        });
-        scheduledFor = sched.firesAt;
-        notificationId = sched.id;
-      } catch {
-        scheduledFor = new Date(Date.now() + 7 * 86400_000).toISOString();
-      }
-      const id = await createLoop({ diagnosisId, scheduledFor, notificationId });
+      const id = await ensureLoop();
       await setHypothesis(id, cat, null);
       setLoop(await getLoopByDiagnosis(diagnosisId));
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const startRec = async () => {
+    try {
+      const h = await startRecording();
+      setRecHandle(h);
+    } catch {
+      /* permission denied or device error */
+    }
+  };
+
+  const stopRec = async () => {
+    if (!recHandle) return;
+    setBusy(true);
+    try {
+      const { uri } = await recHandle.stop();
+      const id = await ensureLoop();
+      await setHypothesisAudio(id, uri);
+      setLoop(await getLoopByDiagnosis(diagnosisId));
+    } finally {
+      setRecHandle(null);
       setBusy(false);
     }
   };
@@ -65,6 +96,14 @@ export default function HypothesisCard({ diagnosisId, diseaseName }: Props) {
             {t('hypothesis.your_theory')}: {t(`hypothesis.opt_${loop.hypothesisCategory}`)}
           </Text>
         )}
+        {loop.hypothesisAudioUri && (
+          <TouchableOpacity
+            style={styles.playBtn}
+            onPress={() => loop.hypothesisAudioUri && play(loop.hypothesisAudioUri)}
+          >
+            <Text style={styles.playBtnText}>▶ {t('hypothesis.play_voice')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -76,14 +115,24 @@ export default function HypothesisCard({ diagnosisId, diseaseName }: Props) {
       {busy ? (
         <ActivityIndicator color="#1b5e20" style={{ marginTop: 12 }} />
       ) : (
-        <View style={styles.options}>
-          {OPTIONS.map((o) => (
-            <TouchableOpacity key={o.id} style={styles.option} onPress={() => pick(o.id)}>
-              <Text style={styles.optionEmoji}>{o.emoji}</Text>
-              <Text style={styles.optionLabel}>{t(o.key)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <>
+          <View style={styles.options}>
+            {OPTIONS.map((o) => (
+              <TouchableOpacity key={o.id} style={styles.option} onPress={() => pick(o.id)}>
+                <Text style={styles.optionEmoji}>{o.emoji}</Text>
+                <Text style={styles.optionLabel}>{t(o.key)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={[styles.voiceBtn, recHandle && styles.voiceBtnActive]}
+            onPress={recHandle ? stopRec : startRec}
+          >
+            <Text style={styles.voiceBtnText}>
+              {recHandle ? `⏹ ${t('hypothesis.stop_voice')}` : `🎙 ${t('hypothesis.start_voice')}`}
+            </Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -115,4 +164,25 @@ const styles = StyleSheet.create({
   confirmedTitle: { fontWeight: '700', color: '#1b5e20', marginBottom: 4 },
   confirmedBody: { color: '#2e7d32', lineHeight: 20 },
   hypothesisLine: { color: '#1b5e20', marginTop: 6, fontStyle: 'italic' },
+  voiceBtn: {
+    marginTop: 10,
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1565c0',
+  },
+  voiceBtnActive: { backgroundColor: '#c62828', borderColor: '#c62828' },
+  voiceBtnText: { color: '#1565c0', fontWeight: '700' },
+  playBtn: {
+    marginTop: 10,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1b5e20',
+  },
+  playBtnText: { color: '#1b5e20', fontWeight: '600' },
 });

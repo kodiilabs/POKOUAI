@@ -8,6 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { recentDiagnoses, type DiagnosisRow } from '@/services/db';
 import { isHubReachable, isOnline } from '@/services/NetworkService';
+import { listPendingLoops } from '@/services/loops';
+import type { Loop } from '@/types';
 import type { RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -18,12 +20,20 @@ export default function HomeScreen({ navigation }: Props) {
   const [online, setOnline] = useState(false);
 
   const [hubReady, setHubReady] = useState(false);
+  const [overdue, setOverdue] = useState<Loop[]>([]);
 
   const refresh = useCallback(async () => {
-    const [rows, net, hub] = await Promise.all([recentDiagnoses(3), isOnline(), isHubReachable()]);
+    const [rows, net, hub, pending] = await Promise.all([
+      recentDiagnoses(3),
+      isOnline(),
+      isHubReachable(),
+      listPendingLoops(),
+    ]);
     setRecent(rows);
     setOnline(net);
     setHubReady(hub);
+    const now = Date.now();
+    setOverdue(pending.filter((l) => new Date(l.scheduledFor).getTime() <= now));
   }, []);
 
   useFocusEffect(
@@ -73,6 +83,20 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {overdue.length > 0 && (
+          <TouchableOpacity
+            style={styles.overdueBanner}
+            onPress={() =>
+              overdue[0] && navigation.navigate('FollowUp', { loopId: overdue[0].id })
+            }
+          >
+            <Text style={styles.overdueTitle}>
+              ⏰ {t('home.overdue_title', { count: overdue.length })}
+            </Text>
+            <Text style={styles.overdueBody}>{t('home.overdue_body')}</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={styles.primaryBtn} onPress={takePhoto}>
           <Text style={styles.primaryBtnText}>📷 {t('home.take_photo')}</Text>
         </TouchableOpacity>
@@ -206,4 +230,12 @@ const styles = StyleSheet.create({
   },
   intelTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
   intelSub: { color: '#bbdefb', fontSize: 12, marginTop: 2 },
+  overdueBanner: {
+    backgroundColor: '#c62828',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
+  overdueTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  overdueBody: { color: '#ffcdd2', fontSize: 12, marginTop: 2 },
 });

@@ -34,6 +34,8 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
       followup_diagnosis_id INTEGER,
       hypothesis_category TEXT,
       hypothesis_note TEXT,
+      hypothesis_audio_uri TEXT,
+      comparison_response TEXT,
       scheduled_for TEXT NOT NULL,
       notification_id TEXT,
       outcome TEXT,
@@ -50,6 +52,16 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
   // Additive migrations for existing installs
   try {
     await db.execAsync(`ALTER TABLE diagnoses ADD COLUMN tier TEXT NOT NULL DEFAULT 'local'`);
+  } catch {
+    /* column already exists */
+  }
+  try {
+    await db.execAsync(`ALTER TABLE loops ADD COLUMN hypothesis_audio_uri TEXT`);
+  } catch {
+    /* column already exists */
+  }
+  try {
+    await db.execAsync(`ALTER TABLE loops ADD COLUMN comparison_response TEXT`);
   } catch {
     /* column already exists */
   }

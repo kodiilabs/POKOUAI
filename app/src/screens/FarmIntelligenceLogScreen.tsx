@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { listCompletedLoops, listPendingLoops } from '@/services/loops';
 import { getDiagnosis } from '@/services/db';
+import { play } from '@/services/voice';
 import type { Loop, LoopOutcome, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IntelligenceLog'>;
@@ -112,6 +113,14 @@ export default function FarmIntelligenceLogScreen({ navigation }: Props) {
                   {item.loop.hypothesisConfirmed === false && '✗'}
                 </Text>
               )}
+              {item.loop.hypothesisAudioUri && (
+                <TouchableOpacity
+                  style={styles.audioPill}
+                  onPress={() => item.loop.hypothesisAudioUri && play(item.loop.hypothesisAudioUri)}
+                >
+                  <Text style={styles.audioPillText}>▶ {t('intel.play_voice')}</Text>
+                </TouchableOpacity>
+              )}
               {item.loop.lesson ? (
                 <View style={styles.lessonBox}>
                   <Text style={styles.lessonLabel}>{t('intel.lesson')}</Text>
@@ -156,4 +165,13 @@ const styles = StyleSheet.create({
   },
   lessonLabel: { color: '#e65100', fontWeight: '700', fontSize: 12, marginBottom: 2 },
   lessonText: { color: '#4e342e', lineHeight: 20 },
+  audioPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e3f2fd',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  audioPillText: { color: '#1565c0', fontSize: 12, fontWeight: '600' },
 });
