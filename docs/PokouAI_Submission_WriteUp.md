@@ -76,7 +76,7 @@ the core of the Cactus Prize claim.
 > All outputs are delivered in French, Dioula, and Baoulé — the primary languages of Ivorian cocoa farmers — with voice input planned for low-literacy users, on hardware as constrained as a 2 GB RAM Android phone.
 
 ### Future of Education Prize ($10K — learning journey)
-> Every diagnosis is a teaching moment: PokouAI's learning layer delivers cause-based explanation, seasonal prevention calendars, spaced-repetition voice quizzes, and a group-teaching mode that transforms extension workers into AI-empowered educators for surrounding farming communities.
+> PokouAI's scientific farming loop transforms every diagnosis into a structured hypothesis-test-conclude cycle — compressing the agricultural feedback loop from a full season to 7 days, building a personal Farm Intelligence Log unique to each farmer, and turning the tool's primary function of disease diagnosis into a continuous, field-based science education that no classroom can replicate.
 
 ### LiteRT Prize ($10K — conditional, Week 4 stretch)
 > An optional LiteRT-LM backend sits behind the same inference abstraction as llama.cpp; on phones with an NPU the app automatically selects LiteRT for faster inference, demonstrating framework-level routing on top of tier-level routing.
@@ -89,14 +89,15 @@ Do not lead with "PokouAI is an education tool." Lead with the farmer and
 the diagnosis. Then add this paragraph to the technical section:
 
 > Beyond diagnosis, PokouAI is an agricultural education platform. Every
-> diagnosis is a teaching moment. The app's learning layer converts
-> reactive problem-solving into proactive agricultural knowledge —
+> diagnosis is a teaching moment. The scientific farming loop converts
+> reactive problem-solving into a 7-day hypothesis-test-conclude cycle —
 > delivered in the farmer's language, adapted to their crop history, and
-> amplified by extension workers teaching groups in the field.
+> amplified by extension workers teaching groups with real data from the
+> village.
 
-The four education modes shipped in the app:
-1. **Learn** — "Why this happened" section after every diagnosis, wired
-   from `ResultScreen` into `LearnScreen` (`app/src/screens/LearnScreen.tsx`).
+### The four education modes
+1. **Learn** — "Why this happened" section after every diagnosis
+   (`app/src/screens/LearnScreen.tsx`).
 2. **Prevention calendar** — seasonal action list by month for cocoa in
    Côte d'Ivoire (`PreventionCalendarScreen` + `knowledge.getCalendar`).
 3. **Quiz** — spaced-repetition Q&A keyed off the farmer's recent
@@ -104,6 +105,23 @@ The four education modes shipped in the app:
 4. **Group mode** — extension-worker UI that runs diagnosis without
    saving to the personal log (`GroupModeScreen`, passes
    `groupMode: true` to `DiagnosisScreen`).
+
+### The scientific farming loop (Addendum v2)
+The headline education feature. Every diagnosis automatically becomes a
+structured hypothesis-test-conclude cycle:
+
+| Step | Where | What happens |
+|---|---|---|
+| Day 0 — observation | `DiagnosisScreen` | Photo → disease + confidence + treatment |
+| Day 0 — hypothesis | `HypothesisCard` on `ResultScreen` | Farmer taps one of 4 causes (rain / neighbour / insects / unknown). Treatment is shown regardless. |
+| Day 0 — schedule | `notifications.ts` | Local notification queued for +7 days (no internet). |
+| Day 7 — follow-up | `FollowUpScreen` (deep-link from notification tap) | Camera → comparative diagnosis → outcome (stabilised / healed / progressed / unknown) + theory ✓/✗ + 1-line lesson. |
+| Day 7+ — recall | `FarmIntelligenceLogScreen` | Lessons accumulate. Pending loops show as "Due now" once their day arrives. |
+
+The data model is one `loops` table that joins initial diagnosis →
+follow-up diagnosis → outcome → lesson. CRUD in `services/loops.ts`.
+Each loop is the scientific method made operational for a farmer who has
+never heard the word "hypothesis."
 
 ---
 
@@ -119,7 +137,11 @@ The four education modes shipped in the app:
 | 4 languages | ⚠️ | fr + en reviewed. dyu + bci marked `draft_requires_native_review` — native-speaker review is a blocker for Digital Equity Prize |
 | Group mode | ✅ | Skips persistence, uses same router |
 | Learn / Calendar / Quiz | ✅ | Content sourced from `cocoa_diseases.json` and hardcoded CI-seasonal data |
-| Fine-tuned model exists | ❌ | Training is the next step — dataset + Kaggle run pending |
+| Hypothesis prompt | ✅ | `HypothesisCard` records 4-option theory + "I don't know"; loop row created |
+| 7-day local notification | ✅ | `expo-notifications` schedules without internet; deep-link handler in `App.tsx` |
+| Day-7 follow-up + lesson | ✅ | `FollowUpScreen` captures comparative outcome + free-text lesson |
+| Farm Intelligence Log | ✅ | Pending + completed loops listed; lessons accumulated per farmer |
+| Fine-tuned model exists | 🟡 | Training **in progress** on Kaggle (T4 x2, E2B variant, ~3-4h) |
 | Ivorian field photos in training data | ❌ | Dependent on contact outreach |
 | Demo video | ❌ | Scheduled for Week 4 |
 
@@ -139,6 +161,9 @@ corresponding sentence in §3.
 4. Tap "Why?" on Result → Learn screen explains the cause.
 5. Tap "Practice" → Quiz asks a question keyed to that disease.
 6. Home → Group mode → runs a diagnosis without persisting it.
+7. On Result, the blue **🔬 Test your theory** card offers 4 cause options. Tapping one schedules a 7-day local notification and creates a loop row in `loops`.
+8. Home → **🔬 My farm intelligence** lists pending + completed loops. The pending row becomes tappable when due, opening `FollowUp` for a comparative day-7 capture.
+9. After follow-up: outcome + lesson are saved; the loop now appears as a completed entry with a yellow "Lesson learned" pull-quote.
 
 ---
 

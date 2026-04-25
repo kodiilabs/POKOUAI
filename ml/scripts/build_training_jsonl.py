@@ -92,13 +92,14 @@ def build(images_root: Path, diseases_path: Path, out_dir: Path, langs: list[str
 
             for img_path in images:
                 split = deterministic_split(img_path)
+                rel_path = str(img_path.relative_to(images_root))
                 for lang in langs:
                     example = {
                         "messages": [
                             {
                                 "role": "user",
                                 "content": [
-                                    {"type": "image", "path": str(img_path.resolve())},
+                                    {"type": "image", "path": rel_path},
                                     {"type": "text", "text": USER_PROMPTS[lang]},
                                 ],
                             },

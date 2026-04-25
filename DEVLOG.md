@@ -37,3 +37,28 @@ The addendum's A5 llama.cpp-prize snippet says "E4B on a 2 GB RAM Android." That
 - `OllamaService` reads the preference on every call and tags `modelVersion` as `ollama/<model>` so the Result screen and submitted telemetry show which tier *and* which hub model answered.
 - `HubSettingsScreen` has a radio-style picker with RAM hints; the install snippet's `ollama pull` line reflects the current choice.
 - Submission write-up + Cactus/Ollama prize blurbs updated to reflect the operator-picked hub model (no hardcoded 27B claim).
+
+## 2026-04-23 — Pipeline run + Kaggle dataset upload
+- Local pipeline ran cleanly: `prepare_training_data.py` → `augment_images.py` → `build_training_jsonl.py`.
+- Two albumentations API breaks fixed in `augment_images.py`: `ImageCompression(quality_lower/upper)` → `quality_range=(min, max)`, and `RandomResizedCrop(height, width)` → `size=(h, w)`. Pinned versions in requirements would have prevented this; opting against pinning since Kaggle gives a fresh env anyway.
+- `build_training_jsonl.py` was emitting absolute Mac paths — fatal on Kaggle. Switched to relative paths (`relative_to(images_root)`); the notebook's `to_chat` cell now resolves them against `DATA_ROOT` (the Kaggle mount). Re-ran the script after the fix; dataset on Kaggle as `pokou-ai-cocoa-training-data`.
+- Kaggle CLI: new auth flow uses `KAGGLE_API_TOKEN` env var (`KGAT_…`) instead of `~/.kaggle/kaggle.json`. Documented in commit messages but not added to README — it's a transient client-side detail that may revert.
+- E2B fine-tune now running on Kaggle T4 x2 (~3–4h ETA).
+
+## 2026-04-24 — Addendum v2: scientific farming loop
+- New product layer: every diagnosis becomes a 7-day hypothesis → test → conclude → lesson cycle. Reframes Future-of-Education prize from "education layer" to "scientific method made operational."
+- **Schema**: new `loops` table joining initial + follow-up diagnoses, with `hypothesis_category`, `hypothesis_note`, `scheduled_for`, `notification_id`, `outcome`, `hypothesis_confirmed`, `lesson`, `completed_at`. Indexes on `scheduled_for` and `completed_at`. Composed inside the existing `initDb` transaction; no migration needed for fresh installs.
+- **Services**: `loops.ts` (createLoop / setHypothesis / completeLoop / list*); `notifications.ts` wraps `expo-notifications` with `scheduleFollowUpReminder` (7-day fixed delay, Android channel `followup`, deep-link payload `{kind:'followup', loopId}`). Permission requested lazily on first hypothesis pick.
+- **UI**:
+  - `components/HypothesisCard.tsx` — inline blue card on `ResultScreen`. 4 tappable options + "I don't know"; on pick it schedules notification, creates the loop, records the hypothesis, and collapses into a green confirmation showing the next-check date.
+  - `FollowUpScreen` — deep-linked from the notification (or tapped from the intelligence log when overdue). Side-by-side before/now thumbnails, optional comparative re-diagnosis through the existing `routeInference`, outcome buttons, theory ✓/✗ toggle, lesson textarea, "save to log" CTA.
+  - `FarmIntelligenceLogScreen` — pending loops on top (overdue ones get a red border), completed loops below with the lesson pull-quoted in a yellow "Lesson learned" box. Cards show whether the farmer's hypothesis was confirmed.
+  - `HomeScreen` — added a blue **🔬 My farm intelligence** tile.
+  - `App.tsx` — `useRef<NavigationContainerRef>` + `Notifications.addNotificationResponseReceivedListener` so a notification tap routes straight to `FollowUp(loopId)`.
+- **i18n**: full keys for `hypothesis.*`, `followup.*`, `intel.*`, `home.intel_log/sub` in fr + en. dyu/bci stubbed with `[FR→*]` markers.
+- **Dependencies**: `expo-notifications ~0.28.0` added to `app/package.json`. User must run `npm install` and grant notification permission on first hypothesis tap; on iOS a TestFlight build is needed for real-device push (simulator works for dev).
+- **Docs**: `docs/PokouAI_Addendum_v2.md` saved verbatim. Future-of-Education prize blurb in the submission write-up replaced with the addendum's "scientific farming loop" sentence. Verification steps 7–9 added covering the loop end-to-end. Claims-audit table now lists the loop pieces (all ✅) and downgrades fine-tuned-model from ❌ to 🟡 (in progress).
+- **Limitations**:
+  - Voice input for hypothesis ("Farmer answers by voice") is **not yet wired** — taps only for v1. `react-native-whisper` was already planned for v1.1; voice will plug into the same `setHypothesis` call.
+  - The day-7 comparative diagnosis just runs a fresh inference on the new photo; there is no actual model-level comparison of the two images yet. The UI shows side-by-side thumbnails so the farmer can compare visually, and the model independently diagnoses the new photo. A true diff prompt is a Week-4 stretch.
+  - Notification permission is platform-dependent; if the user denies it, `HypothesisCard` falls back to creating the loop without a scheduled notification and the user has to find it via the intelligence log.

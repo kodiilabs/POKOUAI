@@ -73,14 +73,29 @@ Routing: one function in [app/src/services/InferenceRouter.ts](app/src/services/
 
 ### Education layer
 
-Every diagnosis is a teaching moment. Four modes on top of the diagnosis flow:
+Every diagnosis is a teaching moment. Modes on top of the diagnosis flow:
 
 - **Learn** — "Why this happened" explanation after any diagnosis ([LearnScreen.tsx](app/src/screens/LearnScreen.tsx))
 - **Prevention calendar** — seasonal actions for cocoa in Côte d'Ivoire ([PreventionCalendarScreen.tsx](app/src/screens/PreventionCalendarScreen.tsx))
 - **Quiz** — spaced-repetition Q&A keyed to the farmer's recent diagnoses ([QuizScreen.tsx](app/src/screens/QuizScreen.tsx))
 - **Group mode** — extension worker UI for teaching a group of farmers ([GroupModeScreen.tsx](app/src/screens/GroupModeScreen.tsx))
 
-Full prize positioning in [docs/PokouAI_Submission_WriteUp.md](docs/PokouAI_Submission_WriteUp.md).
+### Scientific farming loop (Addendum v2)
+
+Compresses the agricultural feedback loop from a season to 7 days, turning each diagnosis into a hypothesis-test-conclude cycle:
+
+```
+Day 0 — diagnosis      → photo → disease + treatment
+Day 0 — hypothesis     → "what do you think caused this?" (5 s tap, 4 options + "I don't know")
+Day 0 — schedule       → local notification queued for +7 days (no internet)
+Day 7 — follow-up      → second photo, comparative diagnosis, mark outcome + theory ✓/✗
+Day 7 — lesson         → farmer types one-line lesson; saved to Farm Intelligence Log
+Next season — recall   → lesson surfaces as preventive reminder when conditions match
+```
+
+Implementation: [HypothesisCard.tsx](app/src/components/HypothesisCard.tsx) inline on Result screen, [FollowUpScreen.tsx](app/src/screens/FollowUpScreen.tsx) for the day-7 capture, [FarmIntelligenceLogScreen.tsx](app/src/screens/FarmIntelligenceLogScreen.tsx) for the curated lessons. Local notifications via [notifications.ts](app/src/services/notifications.ts) — no internet required to schedule or fire. Data model: a `loops` table linking initial diagnosis → hypothesis → follow-up diagnosis → outcome → lesson.
+
+Full positioning in [docs/PokouAI_Submission_WriteUp.md](docs/PokouAI_Submission_WriteUp.md) and rationale in [docs/PokouAI_Addendum_v2.md](docs/PokouAI_Addendum_v2.md).
 
 ---
 

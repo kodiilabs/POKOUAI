@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { getDiagnosis, type DiagnosisRow } from '@/services/db';
+import HypothesisCard from '@/components/HypothesisCard';
 import type { ConfidenceBand, InferenceTier, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -73,6 +74,8 @@ export default function ResultScreen({ route, navigation }: Props) {
             </View>
           </View>
         </View>
+
+        <HypothesisCard diagnosisId={diagnosisId} diseaseName={d.diseaseName} />
 
         <Section title={t('result.symptoms')} items={d.symptoms} />
         <Section title={t('result.treatment')} items={d.treatment} />

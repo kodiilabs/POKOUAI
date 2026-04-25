@@ -114,6 +114,13 @@ export default function HomeScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
         <TouchableOpacity
+          style={styles.intelTile}
+          onPress={() => navigation.navigate('IntelligenceLog')}
+        >
+          <Text style={styles.intelTitle}>🔬 {t('home.intel_log')}</Text>
+          <Text style={styles.intelSub}>{t('home.intel_sub')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.groupBtn}
           onPress={() => navigation.navigate('GroupMode')}
         >
@@ -191,4 +198,12 @@ const styles = StyleSheet.create({
   },
   groupBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   groupBtnSub: { color: '#b2ebf2', fontSize: 12, marginTop: 2 },
+  intelTile: {
+    backgroundColor: '#1565c0',
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 8,
+  },
+  intelTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  intelSub: { color: '#bbdefb', fontSize: 12, marginTop: 2 },
 });

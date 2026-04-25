@@ -44,6 +44,24 @@ export interface DiagnosisRouted extends DiagnosisResult {
   tier: InferenceTier;
 }
 
+export type HypothesisCategory = 'rain' | 'neighbour' | 'insects' | 'unknown';
+export type LoopOutcome = 'stabilised' | 'progressed' | 'healed' | 'unknown';
+
+export interface Loop {
+  id: number;
+  initialDiagnosisId: number;
+  followupDiagnosisId: number | null;
+  hypothesisCategory: HypothesisCategory | null;
+  hypothesisNote: string | null;
+  scheduledFor: string;
+  notificationId: string | null;
+  outcome: LoopOutcome | null;
+  hypothesisConfirmed: boolean | null;
+  lesson: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
 export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
@@ -56,4 +74,6 @@ export type RootStackParamList = {
   PreventionCalendar: undefined;
   Quiz: { diagnosisId?: number };
   GroupMode: undefined;
+  FollowUp: { loopId: number };
+  IntelligenceLog: undefined;
 };

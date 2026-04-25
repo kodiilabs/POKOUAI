@@ -1,11 +1,12 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 
 import { initI18n } from '@/i18n';
 import { initDb } from '@/services/db';
@@ -22,6 +23,8 @@ import LearnScreen from '@/screens/LearnScreen';
 import PreventionCalendarScreen from '@/screens/PreventionCalendarScreen';
 import QuizScreen from '@/screens/QuizScreen';
 import GroupModeScreen from '@/screens/GroupModeScreen';
+import FollowUpScreen from '@/screens/FollowUpScreen';
+import FarmIntelligenceLogScreen from '@/screens/FarmIntelligenceLogScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ONBOARDING_KEY = 'pokouai.onboarded';
@@ -29,6 +32,7 @@ const ONBOARDING_KEY = 'pokouai.onboarded';
 export default function App() {
   const [ready, setReady] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
+  const navRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   useEffect(() => {
     (async () => {
@@ -38,6 +42,16 @@ export default function App() {
       setOnboarded(flag === '1');
       setReady(true);
     })();
+  }, []);
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+      const data = res.notification.request.content.data as { kind?: string; loopId?: number };
+      if (data.kind === 'followup' && typeof data.loopId === 'number') {
+        navRef.current?.navigate('FollowUp', { loopId: data.loopId });
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   if (!ready) {
@@ -51,7 +65,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <NavigationContainer>
+      <NavigationContainer ref={navRef}>
         <Stack.Navigator
           initialRouteName={onboarded ? 'Home' : 'Onboarding'}
           screenOptions={{
@@ -81,6 +95,12 @@ export default function App() {
               title: 'Group mode',
               headerStyle: { backgroundColor: '#00838f' },
             }}
+          />
+          <Stack.Screen name="FollowUp" component={FollowUpScreen} options={{ title: 'Day 7' }} />
+          <Stack.Screen
+            name="IntelligenceLog"
+            component={FarmIntelligenceLogScreen}
+            options={{ title: 'Farm intelligence' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

@@ -27,8 +27,27 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
       synced_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_diagnoses_created ON diagnoses(created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS loops (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      initial_diagnosis_id INTEGER NOT NULL UNIQUE,
+      followup_diagnosis_id INTEGER,
+      hypothesis_category TEXT,
+      hypothesis_note TEXT,
+      scheduled_for TEXT NOT NULL,
+      notification_id TEXT,
+      outcome TEXT,
+      hypothesis_confirmed INTEGER,
+      lesson TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      completed_at TEXT,
+      FOREIGN KEY (initial_diagnosis_id) REFERENCES diagnoses(id),
+      FOREIGN KEY (followup_diagnosis_id) REFERENCES diagnoses(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_loops_scheduled ON loops(scheduled_for);
+    CREATE INDEX IF NOT EXISTS idx_loops_completed ON loops(completed_at DESC);
   `);
-  // Additive migration for existing installs
+  // Additive migrations for existing installs
   try {
     await db.execAsync(`ALTER TABLE diagnoses ADD COLUMN tier TEXT NOT NULL DEFAULT 'local'`);
   } catch {

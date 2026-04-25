@@ -30,9 +30,9 @@ def build_pipeline() -> A.Compose:
         [
             A.HorizontalFlip(p=0.5),
             A.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.7),
-            A.ImageCompression(quality_lower=55, quality_upper=95, p=0.5),
+            A.ImageCompression(quality_range=(55, 95), p=0.5),
             A.GaussianBlur(blur_limit=(3, 5), p=0.25),
-            A.RandomResizedCrop(height=896, width=896, scale=(0.85, 1.0), p=0.5),
+            A.RandomResizedCrop(size=(896, 896), scale=(0.85, 1.0), p=0.5),
             A.HueSaturationValue(hue_shift_limit=8, sat_shift_limit=15, val_shift_limit=10, p=0.4),
         ]
     )
