@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { downloadModel, isModelDownloaded, MODEL_SIZE_MB } from '@/services/LlamaService';
+import { downloadModel, isModelReady, MODEL_SIZE_MB } from '@/services/LlamaService';
 import { routeInference } from '@/services/InferenceRouter';
 import { insertDiagnosis } from '@/services/db';
 import { currentLanguage } from '@/i18n';
@@ -29,7 +29,7 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     (async () => {
-      if (!(await isModelDownloaded())) setPhase('model_missing');
+      if (!(await isModelReady())) setPhase('model_missing');
     })();
   }, []);
 

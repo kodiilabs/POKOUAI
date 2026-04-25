@@ -3,7 +3,7 @@ import { detectAvailability, pickTier } from './NetworkService';
 import {
   compareLocal,
   diagnose as diagnoseLocal,
-  isModelDownloaded,
+  isModelReady,
   type ComparisonResult,
 } from './LlamaService';
 import { compareViaHub, diagnoseViaHub } from './OllamaService';
@@ -19,7 +19,7 @@ export async function routeInference(
   language: LanguageCode,
   opts: RouterOptions = {},
 ): Promise<DiagnosisRouted> {
-  const localReady = await isModelDownloaded();
+  const localReady = await isModelReady();
   const avail = await detectAvailability(localReady);
   const tier = pickTier(avail, opts.prefer);
   opts.onTierChosen?.(tier);
@@ -67,7 +67,7 @@ export async function routeComparison(
   diseaseName: string,
   opts: RouterOptions = {},
 ): Promise<ComparisonRouted> {
-  const localReady = await isModelDownloaded();
+  const localReady = await isModelReady();
   const avail = await detectAvailability(localReady);
   const tier = pickTier(avail, opts.prefer);
   opts.onTierChosen?.(tier);

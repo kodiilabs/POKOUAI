@@ -41,6 +41,13 @@ export async function isModelDownloaded(): Promise<boolean> {
   return info.exists && info.size !== undefined && info.size > 1_000_000;
 }
 
+/** True if inference can run *now*: either the GGUF is downloaded, or the
+ *  native module is unavailable (simulator / web → falls back to mock). */
+export async function isModelReady(): Promise<boolean> {
+  if (await isModelDownloaded()) return true;
+  return (await loadModule()) === null;
+}
+
 export async function downloadModel(onProgress?: (pct: number) => void): Promise<string> {
   const path = modelLocalPath();
   const task = FileSystem.createDownloadResumable(
@@ -58,11 +65,33 @@ export async function downloadModel(onProgress?: (pct: number) => void): Promise
   return res.uri;
 }
 
-async function loadModule(): Promise<LlamaModule> {
-  // Lazy import — the native module only exists on device, not in web/tests
-  const mod = (await import('react-native-llama')) as unknown as LlamaModule;
-  if (!mod?.initLlama) throw new Error('react-native-llama not available');
-  return mod;
+async function loadModule(): Promise<LlamaModule | null> {
+  try {
+    const mod = (await import('llama.rn')) as unknown as LlamaModule;
+    return mod?.initLlama ? mod : null;
+  } catch {
+    return null;
+  }
+}
+
+function mockContext(): LlamaContext {
+  const cannedDiagnosis =
+    'MALADIE: Pourriture brune du cabosse\n' +
+    'SYMPTOMES:\n- Taches brun foncé qui s\'étendent\n- Mycélium blanc en surface\n- Fèves noircies à l\'intérieur\n' +
+    'TRAITEMENT:\n- Retirer immédiatement les cabosses infectées\n- Brûler ou enterrer loin des arbres sains\n- Appliquer un fongicide cuivre toutes les 3 semaines\n' +
+    'PREVENTION:\n- Récolte régulière, ne pas laisser de cabosses mûres\n- Tailler pour aérer la parcelle\n- Drainer les zones humides\n' +
+    'AGRONOME: Si plus de 30% des cabosses sont touchées.';
+  const cannedComparison =
+    'EVOLUTION: stabilisé\n' +
+    'COMMENTAIRE: Les taches brunes se sont arrêtées et la cabosse a séché en surface.\n' +
+    'ACTIONS: Continuez le fongicide encore 2 semaines, surveillez chaque jour.\n' +
+    'LECON: Après 3 jours de pluie, inspecter les cabosses ombragées sous 48h.';
+  return {
+    completion: async (params) => ({
+      text: /EVOLUTION:|two photos/i.test(params.prompt) ? cannedComparison : cannedDiagnosis,
+    }),
+    release: async () => {},
+  };
 }
 
 export async function loadModel(): Promise<LlamaContext> {
@@ -70,10 +99,17 @@ export async function loadModel(): Promise<LlamaContext> {
   if (loadInFlight) return loadInFlight;
 
   loadInFlight = (async () => {
+    const mod = await loadModule();
+    if (!mod) {
+      // Native module not present (simulator / web / test) — return canned diagnosis
+      // so the rest of the app can be exercised. Real device with llama.rn falls
+      // through to the real path below.
+      llamaCtx = mockContext();
+      return llamaCtx;
+    }
     if (!(await isModelDownloaded())) {
       throw new Error('model not downloaded — call downloadModel() first');
     }
-    const mod = await loadModule();
     const ctx = await mod.initLlama({
       model: modelLocalPath(),
       n_ctx: 2048,

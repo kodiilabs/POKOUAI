@@ -17,12 +17,13 @@
       "bundleIdentifier": "ai.pokou.app",
       "infoPlist": {
         "NSCameraUsageDescription": "PokouAI needs camera access to photograph cocoa pods for disease diagnosis.",
-        "NSPhotoLibraryUsageDescription": "PokouAI needs photo library access to analyze existing photos of cocoa pods."
+        "NSPhotoLibraryUsageDescription": "PokouAI needs photo library access to analyze existing photos of cocoa pods.",
+        "NSMicrophoneUsageDescription": "PokouAI uses the microphone to record your hypothesis as a voice memo before treating."
       }
     },
     "android": {
       "package": "ai.pokou.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "RECORD_AUDIO", "POST_NOTIFICATIONS"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1b5e20"
@@ -36,6 +37,14 @@
       [
         "expo-image-picker",
         { "photosPermission": "Allow PokouAI to access your photo library." }
+      ],
+      [
+        "expo-notifications",
+        { "color": "#1b5e20" }
+      ],
+      [
+        "expo-av",
+        { "microphonePermission": "Allow PokouAI to record your voice hypothesis." }
       ]
     ]
   }
