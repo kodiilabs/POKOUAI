@@ -47,11 +47,15 @@ export default function HomeScreen({ navigation }: Props) {
   }, [refresh]);
 
   const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
-    if (!result.canceled && result.assets[0]) {
-      navigation.navigate('Diagnosis', { imageUri: result.assets[0].uri });
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') return;
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
+      if (!result.canceled && result.assets[0]) {
+        navigation.navigate('Diagnosis', { imageUri: result.assets[0].uri });
+      }
+    } catch {
+      // Simulator has no camera — silently fall through. User taps "From gallery".
     }
   };
 

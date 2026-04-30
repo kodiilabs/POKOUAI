@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import type { DiagnosisResult, LanguageCode } from '@/types';
 import { buildComparisonPrompt, buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';

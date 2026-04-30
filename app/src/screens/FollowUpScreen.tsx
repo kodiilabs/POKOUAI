@@ -45,17 +45,31 @@ export default function FollowUpScreen({ route, navigation }: Props) {
 
   const takeFollowupPhoto = async () => {
     if (!initial) return;
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
-    if (result.canceled || !result.assets[0]) return;
+    let pickedUri: string | null = null;
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') return;
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
+      if (result.canceled || !result.assets[0]) return;
+      pickedUri = result.assets[0].uri;
+    } catch {
+      // Simulator has no camera — try gallery as fallback
+      try {
+        const lib = await ImagePicker.launchImageLibraryAsync({ quality: 0.85 });
+        if (lib.canceled || !lib.assets[0]) return;
+        pickedUri = lib.assets[0].uri;
+      } catch {
+        return;
+      }
+    }
+    if (!pickedUri) return;
     setBusy(true);
-    setFollowupImage(result.assets[0].uri);
+    setFollowupImage(pickedUri);
     setComparisonText(null);
     try {
       const routed = await routeComparison(
         initial.imageUri,
-        result.assets[0].uri,
+        pickedUri,
         currentLanguage(),
         initial.diseaseName,
         { onTierChosen: setComparisonTier },

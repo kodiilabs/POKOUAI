@@ -13,11 +13,26 @@ export default function GroupModeScreen({ navigation }: Props) {
   const { t } = useTranslation();
 
   const start = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
-    if (!result.canceled && result.assets[0]) {
-      navigation.navigate('Diagnosis', { imageUri: result.assets[0].uri, groupMode: true });
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') return;
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
+      if (!result.canceled && result.assets[0]) {
+        navigation.navigate('Diagnosis', { imageUri: result.assets[0].uri, groupMode: true });
+      }
+    } catch {
+      // Simulator fallback — open gallery instead
+      try {
+        const lib = await ImagePicker.launchImageLibraryAsync({ quality: 0.85 });
+        if (!lib.canceled && lib.assets[0]) {
+          navigation.navigate('Diagnosis', {
+            imageUri: lib.assets[0].uri,
+            groupMode: true,
+          });
+        }
+      } catch {
+        /* user cancelled or no permission */
+      }
     }
   };
 
