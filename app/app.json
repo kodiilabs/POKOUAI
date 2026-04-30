@@ -4,6 +4,8 @@
     "slug": "pokou-ai",
     "version": "0.1.0",
     "orientation": "portrait",
+    "scheme": "pokouai",
+    "newArchEnabled": true,
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#1b5e20"
@@ -34,6 +36,13 @@
       }
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": { "newArchEnabled": true },
+          "android": { "newArchEnabled": true }
+        }
+      ],
       [
         "expo-camera",
         {
