@@ -6,8 +6,11 @@ import { parseResponse } from './responseParser';
 
 const MODEL_VERSION = 'cocoa_v1_e2b';
 const MODEL_FILENAME = 'cocoa_v1_e2b.gguf';
+const MMPROJ_FILENAME = 'cocoa_v1_e2b-mmproj.gguf';
 const MODEL_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1_e2b.gguf';
-export const MODEL_SIZE_MB = 1500;
+const MMPROJ_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1_e2b-mmproj.gguf';
+export const MODEL_SIZE_MB = 3200;
+export const MMPROJ_SIZE_MB = 880;
 
 type LlamaModule = {
   initLlama: (config: {
@@ -26,6 +29,8 @@ interface LlamaContext {
     temperature?: number;
     stop?: string[];
   }) => Promise<{ text: string; timings?: { predicted_per_second: number } }>;
+  /** Optional in older versions of llama.rn; required for vision input */
+  initMultimodal?: (params: { path: string; use_gpu?: boolean }) => Promise<void>;
   release: () => Promise<void>;
 }
 
@@ -37,9 +42,22 @@ function modelLocalPath(): string {
   return `${dir}${MODEL_FILENAME}`;
 }
 
+function mmprojLocalPath(): string {
+  const dir = FileSystem.documentDirectory ?? '';
+  return `${dir}${MMPROJ_FILENAME}`;
+}
+
+async function fileExists(path: string, minSize = 1_000_000): Promise<boolean> {
+  const info = await FileSystem.getInfoAsync(path);
+  return info.exists && info.size !== undefined && info.size > minSize;
+}
+
 export async function isModelDownloaded(): Promise<boolean> {
-  const info = await FileSystem.getInfoAsync(modelLocalPath());
-  return info.exists && info.size !== undefined && info.size > 1_000_000;
+  return fileExists(modelLocalPath());
+}
+
+export async function isMmprojDownloaded(): Promise<boolean> {
+  return fileExists(mmprojLocalPath(), 100_000);
 }
 
 /** True if inference can run *now*: either the GGUF is downloaded, or the
@@ -49,21 +67,27 @@ export async function isModelReady(): Promise<boolean> {
   return (await loadModule()) === null;
 }
 
-export async function downloadModel(onProgress?: (pct: number) => void): Promise<string> {
-  const path = modelLocalPath();
-  const task = FileSystem.createDownloadResumable(
-    MODEL_URL,
-    path,
-    {},
-    (progress) => {
-      if (onProgress && progress.totalBytesExpectedToWrite > 0) {
-        onProgress(progress.totalBytesWritten / progress.totalBytesExpectedToWrite);
-      }
-    },
-  );
+async function downloadFile(
+  url: string,
+  destPath: string,
+  onProgress?: (pct: number) => void,
+): Promise<string> {
+  const task = FileSystem.createDownloadResumable(url, destPath, {}, (progress) => {
+    if (onProgress && progress.totalBytesExpectedToWrite > 0) {
+      onProgress(progress.totalBytesWritten / progress.totalBytesExpectedToWrite);
+    }
+  });
   const res = await task.downloadAsync();
-  if (!res?.uri) throw new Error('model download failed');
+  if (!res?.uri) throw new Error(`download failed: ${url}`);
   return res.uri;
+}
+
+export async function downloadModel(onProgress?: (pct: number) => void): Promise<string> {
+  return downloadFile(MODEL_URL, modelLocalPath(), onProgress);
+}
+
+export async function downloadMmproj(onProgress?: (pct: number) => void): Promise<string> {
+  return downloadFile(MMPROJ_URL, mmprojLocalPath(), onProgress);
 }
 
 async function loadModule(): Promise<LlamaModule | null> {
@@ -154,6 +178,14 @@ export async function loadModel(): Promise<LlamaContext> {
       n_gpu_layers: 0,
       n_threads: 4,
     });
+    // Wire vision projector if present and supported by this build of llama.rn
+    if (ctx.initMultimodal && (await isMmprojDownloaded())) {
+      try {
+        await ctx.initMultimodal({ path: mmprojLocalPath(), use_gpu: false });
+      } catch (e) {
+        console.warn('initMultimodal failed — falling back to text-only', e);
+      }
+    }
     llamaCtx = ctx;
     return ctx;
   })();
