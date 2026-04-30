@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import type { DiagnosisResult, LanguageCode } from '@/types';
+import diseases from '@/data/cocoa_diseases.json';
+import type { DiagnosisResult, DiseaseId, LanguageCode } from '@/types';
 import { buildComparisonPromptSingle, buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';
 
@@ -74,22 +75,59 @@ async function loadModule(): Promise<LlamaModule | null> {
   }
 }
 
+/** Demo-mode mock used when the native llama.rn module isn't loaded.
+ *  Picks a disease deterministically from the image path so the same photo
+ *  yields the same diagnosis across runs (and different photos vary). Builds
+ *  the response from the actual cocoa_diseases.json content. */
+const MOCK_DISEASES: DiseaseId[] = [
+  'black_pod',
+  'frosty_pod_rot',
+  'swollen_shoot',
+  'vascular_streak_dieback',
+  'healthy',
+  'other_damage',
+];
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function mockDiagnosisText(imagePath: string): string {
+  const id = MOCK_DISEASES[hashStr(imagePath) % MOCK_DISEASES.length];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const e = (diseases as any).diseases?.[id];
+  if (!e) return 'MALADIE: Non identifié';
+  const fr = (m: { fr: string[] }) => m.fr;
+  return [
+    `MALADIE: ${e.names.fr}`,
+    `SYMPTOMES:\n- ${fr(e.symptoms).join('\n- ')}`,
+    `TRAITEMENT:\n- ${fr(e.treatment).join('\n- ')}`,
+    `PREVENTION:\n- ${fr(e.prevention).join('\n- ')}`,
+    `AGRONOME: ${e.when_to_call_agronomist.fr}`,
+  ].join('\n');
+}
+
+function mockComparisonText(imagePath: string): string {
+  // Vary the EVOLUTION verdict per image so the demo isn't always "stabilisé"
+  const verdicts = ['stabilisé', 'guéri', 'aggravé', 'incertain'];
+  const v = verdicts[hashStr(imagePath) % verdicts.length];
+  return [
+    `EVOLUTION: ${v}`,
+    "COMMENTAIRE: Comparaison des deux photos prises à 7 jours d'intervalle.",
+    'ACTIONS: Continuez la surveillance et la sanitation hebdomadaire.',
+    'LECON: Après 3 jours de pluie, inspecter les cabosses ombragées sous 48h.',
+  ].join('\n');
+}
+
 function mockContext(): LlamaContext {
-  const cannedDiagnosis =
-    'MALADIE: Pourriture brune du cabosse\n' +
-    'SYMPTOMES:\n- Taches brun foncé qui s\'étendent\n- Mycélium blanc en surface\n- Fèves noircies à l\'intérieur\n' +
-    'TRAITEMENT:\n- Retirer immédiatement les cabosses infectées\n- Brûler ou enterrer loin des arbres sains\n- Appliquer un fongicide cuivre toutes les 3 semaines\n' +
-    'PREVENTION:\n- Récolte régulière, ne pas laisser de cabosses mûres\n- Tailler pour aérer la parcelle\n- Drainer les zones humides\n' +
-    'AGRONOME: Si plus de 30% des cabosses sont touchées.';
-  const cannedComparison =
-    'EVOLUTION: stabilisé\n' +
-    'COMMENTAIRE: Les taches brunes se sont arrêtées et la cabosse a séché en surface.\n' +
-    'ACTIONS: Continuez le fongicide encore 2 semaines, surveillez chaque jour.\n' +
-    'LECON: Après 3 jours de pluie, inspecter les cabosses ombragées sous 48h.';
   return {
-    completion: async (params) => ({
-      text: /EVOLUTION:|two photos/i.test(params.prompt) ? cannedComparison : cannedDiagnosis,
-    }),
+    completion: async (params) => {
+      const isComparison = /EVOLUTION:|two photos|7 jours/i.test(params.prompt);
+      const path = params.image_path ?? '';
+      return { text: isComparison ? mockComparisonText(path) : mockDiagnosisText(path) };
+    },
     release: async () => {},
   };
 }
