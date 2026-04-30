@@ -1,7 +1,13 @@
-import { Audio } from 'expo-av';
+import {
+  AudioModule,
+  AudioPlayer,
+  AudioRecorder,
+  RecordingPresets,
+  setAudioModeAsync,
+} from 'expo-audio';
 
-let activeRecording: Audio.Recording | null = null;
-let activeSound: Audio.Sound | null = null;
+let activeRecorder: AudioRecorder | null = null;
+let activePlayer: AudioPlayer | null = null;
 
 export interface RecordingHandle {
   stop: () => Promise<{ uri: string; durationMs: number }>;
@@ -9,60 +15,65 @@ export interface RecordingHandle {
 }
 
 export async function ensureMicPermission(): Promise<boolean> {
-  const { granted } = await Audio.requestPermissionsAsync();
+  const { granted } = await AudioModule.requestRecordingPermissionsAsync();
   if (!granted) return false;
-  await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+  await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
   return true;
 }
 
 export async function startRecording(): Promise<RecordingHandle> {
-  if (activeRecording) throw new Error('recording already in progress');
+  if (activeRecorder) throw new Error('recording already in progress');
   if (!(await ensureMicPermission())) throw new Error('microphone permission denied');
 
-  const recording = new Audio.Recording();
-  await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.LOW_QUALITY);
-  await recording.startAsync();
-  activeRecording = recording;
+  const recorder = new AudioRecorder(RecordingPresets.LOW_QUALITY);
+  await recorder.prepareToRecordAsync();
+  recorder.record();
+  activeRecorder = recorder;
+  const startedAt = Date.now();
 
   return {
     stop: async () => {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      const status = await recording.getStatusAsync();
-      activeRecording = null;
+      await recorder.stop();
+      const uri = recorder.uri;
+      activeRecorder = null;
       if (!uri) throw new Error('no recording uri');
-      return { uri, durationMs: status.durationMillis ?? 0 };
+      return { uri, durationMs: Date.now() - startedAt };
     },
     cancel: async () => {
       try {
-        await recording.stopAndUnloadAsync();
+        await recorder.stop();
       } catch {
-        /* may already be unloaded */
+        /* may already be stopped */
       }
-      activeRecording = null;
+      activeRecorder = null;
     },
   };
 }
 
 export async function play(uri: string): Promise<void> {
   await stopPlayback();
-  const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-  activeSound = sound;
-  sound.setOnPlaybackStatusUpdate((s) => {
-    if (s.isLoaded && s.didJustFinish) {
-      sound.unloadAsync().catch(() => {});
-      if (activeSound === sound) activeSound = null;
+  const player = new AudioPlayer({ uri });
+  activePlayer = player;
+  player.addListener('playbackStatusUpdate', (status) => {
+    if (status.didJustFinish) {
+      try {
+        player.release();
+      } catch {
+        /* already released */
+      }
+      if (activePlayer === player) activePlayer = null;
     }
   });
+  player.play();
 }
 
 export async function stopPlayback(): Promise<void> {
-  if (!activeSound) return;
+  if (!activePlayer) return;
   try {
-    await activeSound.stopAsync();
-    await activeSound.unloadAsync();
+    activePlayer.pause();
+    activePlayer.release();
   } catch {
-    /* already stopped */
+    /* already released */
   }
-  activeSound = null;
+  activePlayer = null;
 }

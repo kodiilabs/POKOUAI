@@ -62,7 +62,7 @@
         }
       ],
       [
-        "expo-av",
+        "expo-audio",
         {
           "microphonePermission": "Allow PokouAI to record your voice hypothesis."
         }
