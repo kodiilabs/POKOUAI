@@ -2,7 +2,66 @@
 
 > **Deadline: May 18, 2026 @ 23:59 UTC** | **Days remaining: 27** | Effort: Full-time
 
-**Legend:** `[ ]` = Not started | `[~]` = In progress | `[x]` = Done | `[!]` = Blocked | **CRITICAL** = must-have
+**Legend:**
+- Status: `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocked
+- Priority (pattern borrowed from WorkbenchIQ): **P1** must ship — submission fails without it · **P2** strong story, ship if at all possible · **P3** polish, defer first if time runs out
+- The old `**CRITICAL**` markers are kept for quick eye-scanning; they map to P1.
+
+---
+
+## TL;DR cut-line — what to drop first if behind
+
+If the deadline is within reach but a P3 is blocking, **cut the P3, ship the P1+P2.** Submission with a working P1+P2 beats a missing submission with everything attempted.
+
+| If you hit the wall on… | …drop this first |
+|---|---|
+| Real on-device inference on a real phone | Ship simulator demo with mock fallback (already wired); call it out as v1.1 |
+| Native-speaker dyu/bci review | Keep `[FR→DYU/BCI à valider]` markers visible — honesty is judging-positive |
+| Group mode / extension worker UI | Cut the screen, keep one sentence in the write-up |
+| Voice memo for hypothesis | Tap-only is already fine for the demo narrative |
+| Ollama hub demo on a real laptop | Show it as a screen-recorded "imagine this is the hub" frame |
+| Two-image comparison vs single | Single-image follow-up still demonstrates the loop |
+| LiteRT backend | Drop entirely — was always conditional |
+
+The P1+P2 list below is what must remain.
+
+---
+
+## P1 (must ship) — submission-blockers
+
+- [ ] **GitHub: public repo + initial structure pushed** (Week 1)
+- [ ] Apache 2.0 LICENSE in repo root (Week 1)
+- [ ] README with problem + setup + demo link (Week 4)
+- [ ] PRIVACY_POLICY.md (Week 4)
+- [ ] `cocoa_diseases.json` — 5 disease classes × 4 languages, fr+en reviewed (Week 2)
+- [ ] **Kaggle notebook runs end-to-end without errors** on a fresh kernel + outputs a GGUF (Week 2/4)
+- [ ] **Real GGUF artifact** downloadable (HF Hub or Kaggle output) (Week 2)
+- [ ] App builds and runs on iOS or Android simulator with mock inference fallback (Week 3)
+- [ ] **Demo video** — 60s, shows farmer + photo + diagnosis + offline indicator (Week 4)
+- [ ] Submitted to Kaggle by May 17 23:59 UTC (Week 5)
+
+## P2 (strong story) — ship if at all possible
+
+- [ ] Hypothesis card on Result screen — 4 options + skip (Week 3)
+- [ ] 7-day local notification scheduled at hypothesis time (Week 3)
+- [ ] FollowUpScreen with comparative diagnosis (single-image fallback ok) (Week 3)
+- [ ] FarmIntelligenceLogScreen — at least one completed loop demonstrated (Week 4)
+- [ ] Tier badges on Home (📱 local / 🛰 hub / ☁️ cloud) — visual story for Cactus prize (Week 3)
+- [ ] Real on-device inference at least once (real Android phone with the GGUF) (Week 4)
+- [ ] Loss curve from Kaggle: visible decreasing trend, not just final number (Week 2)
+- [ ] At least 5 Ivorian field photos in training data (Week 2/3)
+- [ ] dyu / bci UI strings drafted — `[FR→*]` markers acceptable, native review preferred (Week 4)
+
+## P3 (polish, deferrable)
+
+- [ ] Voice memo for hypothesis (`expo-av` recording — implemented, simulator-friendly)
+- [ ] Group mode / extension worker UI
+- [ ] Real Ollama hub running on a laptop with a model attached
+- [ ] Two-image comparison via hub or cloud (vs single-image fallback)
+- [ ] Native-speaker review of dyu / bci translations
+- [ ] LiteRT-LM backend behind the inference router abstraction
+- [ ] APK on Ivory Coast contact's real phone
+- [ ] Multi-crop hint (cassava placeholder UI greyed out)
 
 ---
 

@@ -1,0 +1,26 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Seasonal preventive-action calendar by crop and language. Surfaced in PreventionCalendarScreen.",
+  "by_crop": {
+    "cocoa": {
+      "fr": [
+        { "month": "MAR", "title": "Préparation saison principale", "actions": ["Tailler les arbres après récolte", "Désinfecter les outils", "Inspecter les parcelles pour swollen shoot"] },
+        { "month": "AVR", "title": "Début des pluies", "actions": ["Surveillance hebdomadaire black pod", "Drainer les zones humides", "Nettoyer les cabosses au sol"] },
+        { "month": "MAI", "title": "Saison humide — risque élevé", "actions": ["Appliquer bouillie bordelaise toutes les 3 semaines", "Récolter cabosses mûres rapidement"] },
+        { "month": "JUN", "title": "Pic de pression maladie", "actions": ["Retirer cabosses noircies immédiatement", "Brûler ou enterrer les cabosses infectées", "Vérifier nœuds renflés (VSD)"] },
+        { "month": "SEP", "title": "Mi-saison", "actions": ["Deuxième traitement cuivre", "Contrôle cochenilles (vecteur swollen shoot)"] },
+        { "month": "OCT", "title": "Humidité remontante", "actions": ["Vigilance black pod", "Inspection cochenilles avant pluies"] },
+        { "month": "DEC", "title": "Récolte principale", "actions": ["Récolte régulière (hebdomadaire)", "Sanitation stricte des parcelles"] }
+      ],
+      "en": [
+        { "month": "MAR", "title": "Main season prep", "actions": ["Prune trees after harvest", "Disinfect tools", "Inspect plots for swollen shoot"] },
+        { "month": "APR", "title": "Rains begin", "actions": ["Weekly black pod monitoring", "Drain wet areas", "Clear fallen pods"] },
+        { "month": "MAY", "title": "Wet season — high risk", "actions": ["Apply Bordeaux mixture every 3 weeks", "Harvest ripe pods quickly"] },
+        { "month": "JUN", "title": "Disease pressure peak", "actions": ["Remove blackened pods immediately", "Burn or bury infected pods", "Check for swollen branch nodes (VSD)"] },
+        { "month": "SEP", "title": "Mid-season", "actions": ["Second copper treatment", "Mealybug control (swollen shoot vector)"] },
+        { "month": "OCT", "title": "Humidity returns", "actions": ["Black pod vigilance", "Mealybug inspection before rains"] },
+        { "month": "DEC", "title": "Main harvest", "actions": ["Weekly harvest rhythm", "Strict plot sanitation"] }
+      ]
+    }
+  }
+}

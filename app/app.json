@@ -4,14 +4,14 @@
     "slug": "pokou-ai",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#1b5e20"
     },
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "ai.pokou.app",
@@ -23,29 +23,42 @@
     },
     "android": {
       "package": "ai.pokou.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "RECORD_AUDIO", "POST_NOTIFICATIONS"],
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "RECORD_AUDIO",
+        "POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1b5e20"
       }
     },
     "plugins": [
       [
         "expo-camera",
-        { "cameraPermission": "Allow PokouAI to access your camera to photograph cocoa pods." }
+        {
+          "cameraPermission": "Allow PokouAI to access your camera to photograph cocoa pods."
+        }
       ],
       [
         "expo-image-picker",
-        { "photosPermission": "Allow PokouAI to access your photo library." }
+        {
+          "photosPermission": "Allow PokouAI to access your photo library."
+        }
       ],
       [
         "expo-notifications",
-        { "color": "#1b5e20" }
+        {
+          "color": "#1b5e20"
+        }
       ],
       [
         "expo-av",
-        { "microphonePermission": "Allow PokouAI to record your voice hypothesis." }
-      ]
+        {
+          "microphonePermission": "Allow PokouAI to record your voice hypothesis."
+        }
+      ],
+      "expo-localization"
     ]
   }
 }

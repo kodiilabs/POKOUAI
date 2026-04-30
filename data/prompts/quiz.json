@@ -1,0 +1,44 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Spaced-repetition quiz bank, keyed by disease ID. Picked at random in QuizScreen after a recent diagnosis. Keywords are matched (substring, lowercased) against the farmer's free-text answer.",
+  "fallback": {
+    "fr": {
+      "text": "Citez une mesure de prévention que vous pouvez appliquer cette semaine.",
+      "keywords": ["récolt", "harvest", "taille", "prune", "nettoy", "clean"]
+    },
+    "en": {
+      "text": "Name one prevention measure you can apply this week.",
+      "keywords": ["harvest", "prune", "clean"]
+    }
+  },
+  "by_disease": {
+    "black_pod": {
+      "fr": [
+        { "text": "Quels sont les 3 signes précoces de la pourriture brune ?", "keywords": ["tache", "brun", "noir", "mycélium", "blanc"] },
+        { "text": "Que faire immédiatement avec une cabosse infectée ?", "keywords": ["retirer", "brûler", "enterrer"] }
+      ],
+      "en": [
+        { "text": "What are the 3 early signs of black pod rot?", "keywords": ["brown", "spot", "black", "mycelium", "white"] },
+        { "text": "What should you do immediately with an infected pod?", "keywords": ["remove", "burn", "bury"] }
+      ]
+    },
+    "swollen_shoot": {
+      "fr": [
+        { "text": "Quel insecte transmet le swollen shoot ?", "keywords": ["cochenille"] },
+        { "text": "Existe-t-il un traitement curatif ?", "keywords": ["non", "aucun", "arracher"] }
+      ],
+      "en": [
+        { "text": "Which insect transmits swollen shoot virus?", "keywords": ["mealybug"] },
+        { "text": "Is there a curative treatment?", "keywords": ["no", "none", "uproot"] }
+      ]
+    },
+    "vascular_streak_dieback": {
+      "fr": [
+        { "text": "À quelle distance de la zone infectée faut-il tailler ?", "keywords": ["30", "cm", "centim"] }
+      ],
+      "en": [
+        { "text": "How far below the infected area should you prune?", "keywords": ["30", "cm"] }
+      ]
+    }
+  }
+}

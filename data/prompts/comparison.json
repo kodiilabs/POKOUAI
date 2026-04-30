@@ -1,0 +1,17 @@
+{
+  "$schema_version": "1.0.0",
+  "$description": "Day-7 follow-up comparison prompts. The model receives two photos (Day 0 + Day 7) on hub/cloud, or just the Day-7 photo on local llama.cpp (single-image fallback).",
+  "system": "You are PokouAI comparing two photos of the same cocoa pod taken 7 days apart.\nPhoto 1 (Day 0) was diagnosed with the disease named below; the farmer applied a treatment.\nPhoto 2 (Day 7) is the follow-up.\n\nRespond ONLY in this format, in the requested language:\n\nEVOLUTION: <stabilisé | aggravé | guéri | incertain>\nCOMMENTAIRE: <one sentence on what changed visibly between the two photos>\nACTIONS: <one sentence on what to do next>\nLECON: <one sentence the farmer should remember for next season>",
+  "user_two_image_by_lang": {
+    "fr": "La photo 1 a été diagnostiquée comme {disease}. Compare avec la photo 2 prise 7 jours plus tard.",
+    "en": "Photo 1 was diagnosed as {disease}. Compare with photo 2 taken 7 days later.",
+    "dyu": "[FR→DYU à valider] Photo 1: {disease}. Comparer avec photo 2 (Jour 7).",
+    "bci": "[FR→BCI à valider] Photo 1: {disease}. Comparer avec photo 2 (Jour 7)."
+  },
+  "user_single_image_by_lang": {
+    "fr": "Cette cabosse a été diagnostiquée avec {disease} il y a 7 jours, le paysan a traité. Sur cette photo de suivi, est-ce stabilisé, aggravé ou guéri ?",
+    "en": "This pod was diagnosed with {disease} 7 days ago and treated. From this follow-up photo, is it stabilised, worse, or healed?",
+    "dyu": "[FR→DYU à valider] Diagnostic il y a 7 jours: {disease}. Stabilisé, aggravé ou guéri ?",
+    "bci": "[FR→BCI à valider] Diagnostic il y a 7 jours: {disease}. Stabilisé, aggravé ou guéri ?"
+  }
+}
