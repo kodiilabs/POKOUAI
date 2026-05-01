@@ -118,39 +118,90 @@ function hashStr(s: string): number {
   return Math.abs(h);
 }
 
-function mockDiagnosisText(imagePath: string): string {
+/** Detect the user's language from the prompt content so the mock can return
+ *  content in the right language. The user-prompt strings are language-tagged
+ *  in promptBuilder; we match on stable substrings. */
+function detectLang(prompt: string): LanguageCode {
+  if (prompt.includes('[FR→DYU')) return 'dyu';
+  if (prompt.includes('[FR→BCI')) return 'bci';
+  if (/Look at this cocoa pod|Compare with photo 2|7 days later|7 days ago/i.test(prompt)) {
+    return 'en';
+  }
+  return 'fr';
+}
+
+function pickStr(m: Record<string, string>, lang: LanguageCode): string {
+  return m[lang] ?? m.fr;
+}
+function pickArr(m: Record<string, string[]>, lang: LanguageCode): string[] {
+  return m[lang] ?? m.fr ?? [];
+}
+
+function mockDiagnosisText(imagePath: string, lang: LanguageCode): string {
   const id = MOCK_DISEASES[hashStr(imagePath) % MOCK_DISEASES.length];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const e = (diseases as any).diseases?.[id];
   if (!e) return 'MALADIE: Non identifié';
-  const fr = (m: { fr: string[] }) => m.fr;
   return [
-    `MALADIE: ${e.names.fr}`,
-    `SYMPTOMES:\n- ${fr(e.symptoms).join('\n- ')}`,
-    `TRAITEMENT:\n- ${fr(e.treatment).join('\n- ')}`,
-    `PREVENTION:\n- ${fr(e.prevention).join('\n- ')}`,
-    `AGRONOME: ${e.when_to_call_agronomist.fr}`,
+    `MALADIE: ${pickStr(e.names, lang)}`,
+    `SYMPTOMES:\n- ${pickArr(e.symptoms, lang).join('\n- ')}`,
+    `TRAITEMENT:\n- ${pickArr(e.treatment, lang).join('\n- ')}`,
+    `PREVENTION:\n- ${pickArr(e.prevention, lang).join('\n- ')}`,
+    `AGRONOME: ${pickStr(e.when_to_call_agronomist, lang)}`,
   ].join('\n');
 }
 
-function mockComparisonText(imagePath: string): string {
-  // Vary the EVOLUTION verdict per image so the demo isn't always "stabilisé"
-  const verdicts = ['stabilisé', 'guéri', 'aggravé', 'incertain'];
+const COMPARE_VERDICTS: Record<LanguageCode, string[]> = {
+  fr: ['stabilisé', 'guéri', 'aggravé', 'incertain'],
+  en: ['stabilised', 'healed', 'worsened', 'uncertain'],
+  dyu: ['[FR→DYU à valider] stabilisé', '[FR→DYU à valider] guéri', '[FR→DYU à valider] aggravé', '[FR→DYU à valider] incertain'],
+  bci: ['[FR→BCI à valider] stabilisé', '[FR→BCI à valider] guéri', '[FR→BCI à valider] aggravé', '[FR→BCI à valider] incertain'],
+};
+
+const COMPARE_BODY: Record<LanguageCode, { commentaire: string; actions: string; lecon: string }> = {
+  fr: {
+    commentaire: "Comparaison des deux photos prises à 7 jours d'intervalle.",
+    actions: 'Continuez la surveillance et la sanitation hebdomadaire.',
+    lecon: 'Après 3 jours de pluie, inspecter les cabosses ombragées sous 48h.',
+  },
+  en: {
+    commentaire: 'Comparison of the two photos taken 7 days apart.',
+    actions: 'Keep up weekly monitoring and plot sanitation.',
+    lecon: 'After 3 rainy days, inspect shaded pods within 48 hours.',
+  },
+  dyu: {
+    commentaire: '[FR→DYU à valider] Comparaison des deux photos.',
+    actions: '[FR→DYU à valider] Surveillance hebdomadaire.',
+    lecon: '[FR→DYU à valider] Inspecter les cabosses ombragées après pluie.',
+  },
+  bci: {
+    commentaire: '[FR→BCI à valider] Comparaison des deux photos.',
+    actions: '[FR→BCI à valider] Surveillance hebdomadaire.',
+    lecon: '[FR→BCI à valider] Inspecter les cabosses ombragées après pluie.',
+  },
+};
+
+function mockComparisonText(imagePath: string, lang: LanguageCode): string {
+  const verdicts = COMPARE_VERDICTS[lang];
+  const body = COMPARE_BODY[lang];
   const v = verdicts[hashStr(imagePath) % verdicts.length];
   return [
     `EVOLUTION: ${v}`,
-    "COMMENTAIRE: Comparaison des deux photos prises à 7 jours d'intervalle.",
-    'ACTIONS: Continuez la surveillance et la sanitation hebdomadaire.',
-    'LECON: Après 3 jours de pluie, inspecter les cabosses ombragées sous 48h.',
+    `COMMENTAIRE: ${body.commentaire}`,
+    `ACTIONS: ${body.actions}`,
+    `LECON: ${body.lecon}`,
   ].join('\n');
 }
 
 function mockContext(): LlamaContext {
   return {
     completion: async (params) => {
-      const isComparison = /EVOLUTION:|two photos|7 jours/i.test(params.prompt);
+      const lang = detectLang(params.prompt);
+      const isComparison = /EVOLUTION:|two photos|7 jours|7 days/i.test(params.prompt);
       const path = params.image_path ?? '';
-      return { text: isComparison ? mockComparisonText(path) : mockDiagnosisText(path) };
+      return {
+        text: isComparison ? mockComparisonText(path, lang) : mockDiagnosisText(path, lang),
+      };
     },
     release: async () => {},
   };
