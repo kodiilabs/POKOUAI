@@ -40,6 +40,15 @@ export async function initI18n(): Promise<void> {
 export async function setLanguage(lng: LanguageCode): Promise<void> {
   await AsyncStorage.setItem(LANGUAGE_KEY, lng);
   await i18n.changeLanguage(lng);
+  // Drop any cached LLM context so the next diagnosis re-creates the mock /
+  // model-init closure against the new language. Without this, changing
+  // language only takes effect after a full app kill.
+  try {
+    const { unloadModel } = await import('@/services/LlamaService');
+    await unloadModel();
+  } catch {
+    /* hot-reload edge case */
+  }
 }
 
 export function currentLanguage(): LanguageCode {
