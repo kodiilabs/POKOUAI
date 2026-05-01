@@ -74,6 +74,11 @@ export default function ResultScreen({ route, navigation }: Props) {
             <View style={styles.tierBadge}>
               <Text style={styles.tierBadgeText}>{TIER_LABEL[d.tier]}</Text>
             </View>
+            {d.modelVersion.includes('MOCK') && (
+              <View style={styles.demoBadge}>
+                <Text style={styles.demoBadgeText}>DEMO</Text>
+              </View>
+            )}
           </View>
           <SpeakButton
             language={d.language}
@@ -153,6 +158,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#263238',
   },
   tierBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  demoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#c62828',
+  },
+  demoBadgeText: { color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   speakBtn: { marginTop: 8 },
   section: {
     backgroundColor: '#fff',

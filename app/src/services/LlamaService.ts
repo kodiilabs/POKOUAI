@@ -5,6 +5,12 @@ import { buildComparisonPromptSingle, buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';
 
 const MODEL_VERSION = 'cocoa_v1_e2b';
+const MOCK_VERSION = 'cocoa_v1_e2b-MOCK';
+
+let isMockMode = false;
+export function isRunningMock(): boolean {
+  return isMockMode;
+}
 const MODEL_FILENAME = 'cocoa_v1_e2b.gguf';
 const MMPROJ_FILENAME = 'cocoa_v1_e2b-mmproj.gguf';
 const MODEL_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1_e2b.gguf';
@@ -214,31 +220,43 @@ export async function loadModel(): Promise<LlamaContext> {
   loadInFlight = (async () => {
     const mod = await loadModule();
     if (!mod) {
-      // Native module not present (simulator / web / test) — return canned diagnosis
-      // so the rest of the app can be exercised. Real device with llama.rn falls
-      // through to the real path below.
+      console.warn('[LlamaService] llama.rn not available — using MOCK');
+      isMockMode = true;
       llamaCtx = mockContext();
       return llamaCtx;
     }
     if (!(await isModelDownloaded())) {
-      throw new Error('model not downloaded — call downloadModel() first');
+      console.warn('[LlamaService] GGUF not on device — using MOCK');
+      isMockMode = true;
+      llamaCtx = mockContext();
+      return llamaCtx;
     }
-    const ctx = await mod.initLlama({
-      model: modelLocalPath(),
-      n_ctx: 2048,
-      n_gpu_layers: 0,
-      n_threads: 4,
-    });
-    // Wire vision projector if present and supported by this build of llama.rn
-    if (ctx.initMultimodal && (await isMmprojDownloaded())) {
-      try {
-        await ctx.initMultimodal({ path: mmprojLocalPath(), use_gpu: false });
-      } catch (e) {
-        console.warn('initMultimodal failed — falling back to text-only', e);
+    try {
+      console.log('[LlamaService] initLlama on', modelLocalPath());
+      const ctx = await mod.initLlama({
+        model: modelLocalPath(),
+        n_ctx: 2048,
+        n_gpu_layers: 0,
+        n_threads: 4,
+      });
+      console.log('[LlamaService] ✓ main model loaded');
+      if (ctx.initMultimodal && (await isMmprojDownloaded())) {
+        try {
+          await ctx.initMultimodal({ path: mmprojLocalPath(), use_gpu: false });
+          console.log('[LlamaService] ✓ mmproj loaded');
+        } catch (e) {
+          console.warn('[LlamaService] initMultimodal failed — text-only', e);
+        }
       }
+      isMockMode = false;
+      llamaCtx = ctx;
+      return ctx;
+    } catch (err) {
+      console.error('[LlamaService] initLlama threw — falling back to MOCK', err);
+      isMockMode = true;
+      llamaCtx = mockContext();
+      return llamaCtx;
     }
-    llamaCtx = ctx;
-    return ctx;
   })();
 
   try {
@@ -271,17 +289,23 @@ export async function diagnose(imageUri: string, language: LanguageCode): Promis
   const latencyMs = Date.now() - started;
 
   const confidence = estimateConfidence(result.text);
-  return parseResponse(result.text, confidence, MODEL_VERSION, latencyMs);
+  const version = isMockMode ? MOCK_VERSION : MODEL_VERSION;
+  return parseResponse(result.text, confidence, version, latencyMs);
 }
 
 function estimateConfidence(text: string): number {
   // Placeholder: a real implementation reads logprobs from the completion.
-  // Heuristic: structured responses with all 4 sections present → high.
+  // Mock mode caps at 0.65 — structurally consistent canned text shouldn't
+  // claim 100%. Real-model path caps at 0.9 because heuristic still
+  // can't measure true confidence; we vary slightly per response shape.
   const sections = ['MALADIE:', 'SYMPTOMES:', 'TRAITEMENT:', 'PREVENTION:'];
   const present = sections.filter((s) => text.includes(s)).length;
   const base = present / sections.length;
-  if (/incertain|non analysable|non identifi/i.test(text)) return Math.min(base * 0.6, 0.45);
-  return Math.max(0.5, base);
+  if (/incertain|non analysable|non identifi/i.test(text)) return Math.min(base * 0.5, 0.4);
+  const cap = isMockMode ? 0.65 : 0.9;
+  // Slight per-response jitter so the band varies across diagnoses
+  const jitter = (text.length % 10) / 100;
+  return Math.max(0.5, Math.min(cap, base * cap + jitter));
 }
 
 export interface ComparisonResult {
@@ -311,7 +335,7 @@ export async function compareLocal(
   });
   return {
     text: result.text,
-    modelVersion: `${MODEL_VERSION}-compare-1img`,
+    modelVersion: isMockMode ? `${MOCK_VERSION}-compare` : `${MODEL_VERSION}-compare-1img`,
     latencyMs: Date.now() - started,
   };
 }

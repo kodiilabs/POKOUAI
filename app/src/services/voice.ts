@@ -15,16 +15,23 @@ export interface RecordingHandle {
 }
 
 export async function ensureMicPermission(): Promise<boolean> {
-  const { granted } = await AudioModule.requestRecordingPermissionsAsync();
-  if (!granted) return false;
-  await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-  return true;
+  try {
+    const { granted } = await AudioModule.requestRecordingPermissionsAsync();
+    console.log('[voice] mic permission granted:', granted);
+    if (!granted) return false;
+    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    return true;
+  } catch (e) {
+    console.error('[voice] permission/mode error:', e);
+    return false;
+  }
 }
 
 export async function startRecording(): Promise<RecordingHandle> {
   if (activeRecorder) throw new Error('recording already in progress');
   if (!(await ensureMicPermission())) throw new Error('microphone permission denied');
 
+  console.log('[voice] startRecording');
   const recorder = new AudioRecorder(RecordingPresets.LOW_QUALITY);
   await recorder.prepareToRecordAsync();
   recorder.record();
