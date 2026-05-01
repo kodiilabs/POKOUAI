@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { getDiagnosis, type DiagnosisRow } from '@/services/db';
+import { diagnosisToSpeech } from '@/services/speech';
 import HypothesisCard from '@/components/HypothesisCard';
+import SpeakButton from '@/components/SpeakButton';
 import type { ConfidenceBand, InferenceTier, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -73,6 +75,17 @@ export default function ResultScreen({ route, navigation }: Props) {
               <Text style={styles.tierBadgeText}>{TIER_LABEL[d.tier]}</Text>
             </View>
           </View>
+          <SpeakButton
+            language={d.language}
+            text={diagnosisToSpeech({
+              diseaseName: d.diseaseName,
+              symptoms: d.symptoms,
+              treatment: d.treatment,
+              prevention: d.prevention,
+              agronomistAdvice: d.agronomistAdvice,
+            })}
+            style={styles.speakBtn}
+          />
         </View>
 
         <HypothesisCard diagnosisId={diagnosisId} diseaseName={d.diseaseName} />
@@ -140,6 +153,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#263238',
   },
   tierBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  speakBtn: { marginTop: 8 },
   section: {
     backgroundColor: '#fff',
     padding: 14,

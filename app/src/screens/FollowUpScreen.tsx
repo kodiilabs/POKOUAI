@@ -10,6 +10,7 @@ import { completeLoop, getLoop, setComparisonResponse } from '@/services/loops';
 import { routeComparison } from '@/services/InferenceRouter';
 import { play } from '@/services/voice';
 import { currentLanguage } from '@/i18n';
+import SpeakButton from '@/components/SpeakButton';
 import type { InferenceTier, Loop, LoopOutcome, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FollowUp'>;
@@ -135,6 +136,11 @@ export default function FollowUpScreen({ route, navigation }: Props) {
               {comparisonTier && ` · ${comparisonTier}`}
             </Text>
             <Text style={styles.compareBody}>{comparisonText}</Text>
+            <SpeakButton
+              language={currentLanguage()}
+              text={comparisonText}
+              style={{ marginTop: 8 }}
+            />
           </View>
         )}
 

@@ -154,6 +154,11 @@
   "intel.lesson": "Lesson learned",
   "intel.play_voice": "Play hypothesis",
 
+  "speech.play": "Listen",
+  "speech.stop": "Stop",
+  "speech.unavailable_title": "Voice playback unavailable",
+  "speech.unavailable_body": "Dioula and Baoulé voice synthesis is coming soon. Switch to French or English in Settings to hear the diagnosis read aloud.",
+
   "lang.fr": "Français",
   "lang.dyu": "Dioula",
   "lang.bci": "Baoulé",

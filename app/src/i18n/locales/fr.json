@@ -154,6 +154,11 @@
   "intel.lesson": "Leçon retenue",
   "intel.play_voice": "Écouter l'hypothèse",
 
+  "speech.play": "Écouter",
+  "speech.stop": "Arrêter",
+  "speech.unavailable_title": "Lecture vocale indisponible",
+  "speech.unavailable_body": "La synthèse vocale Dioula et Baoulé arrive bientôt. Pour l'instant, sélectionnez Français ou Anglais dans les paramètres pour entendre le diagnostic.",
+
   "lang.fr": "Français",
   "lang.dyu": "Dioula",
   "lang.bci": "Baoulé",

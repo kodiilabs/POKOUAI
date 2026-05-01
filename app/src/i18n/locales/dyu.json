@@ -157,6 +157,11 @@
   "intel.lesson": "[FR→DYU à valider] Leçon retenue",
   "intel.play_voice": "[FR→DYU à valider] Écouter l'hypothèse",
 
+  "speech.play": "[FR→DYU à valider] Écouter",
+  "speech.stop": "[FR→DYU à valider] Arrêter",
+  "speech.unavailable_title": "[FR→DYU à valider] Lecture vocale indisponible",
+  "speech.unavailable_body": "[FR→DYU à valider] La synthèse vocale Dioula arrive bientôt — choisissez Français pour entendre le diagnostic.",
+
   "lang.fr": "Français",
   "lang.dyu": "Dioula",
   "lang.bci": "Baoulé",
