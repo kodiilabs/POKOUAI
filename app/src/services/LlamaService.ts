@@ -4,20 +4,25 @@ import type { DiagnosisResult, DiseaseId, LanguageCode } from '@/types';
 import { buildComparisonPromptSingle, buildPrompt } from './promptBuilder';
 import { parseResponse } from './responseParser';
 
+// ─── constants ───────────────────────────────────────────────────────────
 const MODEL_VERSION = 'cocoa_v1_e2b';
 const MOCK_VERSION = 'cocoa_v1_e2b-MOCK';
+const MODEL_FILENAME = 'cocoa_v1_e2b.gguf';
+const MMPROJ_FILENAME = 'cocoa_v1_e2b-mmproj.gguf';
+export const MODEL_SIZE_MB = 3200;
+export const MMPROJ_SIZE_MB = 880;
+
+/** Generation timeout. iOS won't kill our completion call indefinitely; the
+ *  user will if the spinner spins too long. 90 s is generous for a phone
+ *  doing 5B params at ~5 t/s with a 400-token cap. */
+const COMPLETION_TIMEOUT_MS = 90_000;
 
 let isMockMode = false;
 export function isRunningMock(): boolean {
   return isMockMode;
 }
-const MODEL_FILENAME = 'cocoa_v1_e2b.gguf';
-const MMPROJ_FILENAME = 'cocoa_v1_e2b-mmproj.gguf';
-const MODEL_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1_e2b.gguf';
-const MMPROJ_URL = 'https://huggingface.co/pokou-ai/cocoa-v1-gguf/resolve/main/cocoa_v1_e2b-mmproj.gguf';
-export const MODEL_SIZE_MB = 3200;
-export const MMPROJ_SIZE_MB = 880;
 
+// ─── module load (llama.rn binding) ──────────────────────────────────────
 type LlamaModule = {
   initLlama: (config: {
     model: string;
@@ -35,7 +40,7 @@ interface LlamaContext {
     temperature?: number;
     stop?: string[];
   }) => Promise<{ text: string; timings?: { predicted_per_second: number } }>;
-  /** Optional in older versions of llama.rn; required for vision input */
+  /** Optional in older versions of llama.rn; required for vision input. */
   initMultimodal?: (params: { path: string; use_gpu?: boolean }) => Promise<void>;
   release: () => Promise<void>;
 }
@@ -43,14 +48,31 @@ interface LlamaContext {
 let llamaCtx: LlamaContext | null = null;
 let loadInFlight: Promise<LlamaContext> | null = null;
 
-function modelLocalPath(): string {
-  const dir = FileSystem.documentDirectory ?? '';
-  return `${dir}${MODEL_FILENAME}`;
+async function loadModule(): Promise<LlamaModule | null> {
+  try {
+    const mod = (await import('llama.rn')) as unknown as LlamaModule;
+    return typeof mod?.initLlama === 'function' ? mod : null;
+  } catch {
+    return null;
+  }
 }
 
+// ─── filesystem ──────────────────────────────────────────────────────────
+function docDir(): string {
+  const dir = FileSystem.documentDirectory;
+  if (!dir) {
+    throw new Error(
+      'FileSystem.documentDirectory is null — running in an unsupported environment',
+    );
+  }
+  return dir;
+}
+
+function modelLocalPath(): string {
+  return `${docDir()}${MODEL_FILENAME}`;
+}
 function mmprojLocalPath(): string {
-  const dir = FileSystem.documentDirectory ?? '';
-  return `${dir}${MMPROJ_FILENAME}`;
+  return `${docDir()}${MMPROJ_FILENAME}`;
 }
 
 async function fileExists(path: string, minSize = 1_000_000): Promise<boolean> {
@@ -61,54 +83,35 @@ async function fileExists(path: string, minSize = 1_000_000): Promise<boolean> {
 export async function isModelDownloaded(): Promise<boolean> {
   return fileExists(modelLocalPath());
 }
-
 export async function isMmprojDownloaded(): Promise<boolean> {
   return fileExists(mmprojLocalPath(), 100_000);
 }
 
-/** True if inference can run *now*: either the GGUF is downloaded, or the
- *  native module is unavailable (simulator / web → falls back to mock). */
+/** True if inference can run *now*: either the GGUF is sideloaded, or the
+ *  native module is unavailable (simulator / web → falls back to mock).
+ *  Note: this does NOT guarantee the model loaded successfully — initLlama
+ *  may still throw and fall back to mock. Use isRunningMock() afterward
+ *  for the truth. */
 export async function isModelReady(): Promise<boolean> {
   if (await isModelDownloaded()) return true;
   return (await loadModule()) === null;
 }
 
-async function downloadFile(
-  url: string,
-  destPath: string,
-  onProgress?: (pct: number) => void,
-): Promise<string> {
-  const task = FileSystem.createDownloadResumable(url, destPath, {}, (progress) => {
-    if (onProgress && progress.totalBytesExpectedToWrite > 0) {
-      onProgress(progress.totalBytesWritten / progress.totalBytesExpectedToWrite);
-    }
-  });
-  const res = await task.downloadAsync();
-  if (!res?.uri) throw new Error(`download failed: ${url}`);
-  return res.uri;
+/** Auto-download is intentionally disabled. The user-uploaded HF path
+ *  was 404-ing and silently wrote bad GGUFs. Until we publish a public
+ *  repo, models must be sideloaded via Finder → iPhone → Files → PokouAI. */
+export async function downloadModel(): Promise<string> {
+  throw new Error(
+    'Auto-download disabled. Sideload the GGUF via Finder → iPhone → Files → PokouAI.',
+  );
+}
+export async function downloadMmproj(): Promise<string> {
+  throw new Error(
+    'Auto-download disabled. Sideload the mmproj GGUF via Finder → iPhone → Files → PokouAI.',
+  );
 }
 
-export async function downloadModel(onProgress?: (pct: number) => void): Promise<string> {
-  return downloadFile(MODEL_URL, modelLocalPath(), onProgress);
-}
-
-export async function downloadMmproj(onProgress?: (pct: number) => void): Promise<string> {
-  return downloadFile(MMPROJ_URL, mmprojLocalPath(), onProgress);
-}
-
-async function loadModule(): Promise<LlamaModule | null> {
-  try {
-    const mod = (await import('llama.rn')) as unknown as LlamaModule;
-    return mod?.initLlama ? mod : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Demo-mode mock used when the native llama.rn module isn't loaded.
- *  Picks a disease deterministically from the image path so the same photo
- *  yields the same diagnosis across runs (and different photos vary). Builds
- *  the response from the actual cocoa_diseases.json content. */
+// ─── mock (used when llama.rn missing or initLlama fails) ────────────────
 const MOCK_DISEASES: DiseaseId[] = [
   'black_pod',
   'frosty_pod_rot',
@@ -124,15 +127,10 @@ function hashStr(s: string): number {
   return Math.abs(h);
 }
 
-/** Detect the user's language from the prompt content so the mock can return
- *  content in the right language. The user-prompt strings are language-tagged
- *  in promptBuilder; we match on stable substrings. */
 function detectLang(prompt: string): LanguageCode {
   let lang: LanguageCode = 'fr';
   if (prompt.includes('[FR→DYU')) lang = 'dyu';
   else if (prompt.includes('[FR→BCI')) lang = 'bci';
-  // Now that the system prompt is language-aware, English mode has many
-  // English-only markers (DISEASE:, "in English", "Black pod rot", etc.).
   else if (
     /\bDISEASE:|in English|Look at this cocoa pod|Respond ONLY in the following|Black pod rot|Frosty pod rot|What disease is this/i.test(
       prompt,
@@ -150,11 +148,9 @@ function pickArr(m: Record<string, string[]>, lang: LanguageCode): string[] {
   return m[lang] ?? m.fr ?? [];
 }
 
-/** Headers per language so the mock matches the language-aware system prompt. */
 const HEADERS: Record<LanguageCode, { disease: string; symptoms: string; treatment: string; prevention: string; agronomist: string }> = {
   fr: { disease: 'MALADIE', symptoms: 'SYMPTOMES', treatment: 'TRAITEMENT', prevention: 'PREVENTION', agronomist: 'AGRONOME' },
   en: { disease: 'DISEASE', symptoms: 'SYMPTOMS', treatment: 'TREATMENT', prevention: 'PREVENTION', agronomist: 'AGRONOMIST' },
-  // dyu/bci keep French headers for now — translation isn't validated, headers stable for parsing
   dyu: { disease: 'MALADIE', symptoms: 'SYMPTOMES', treatment: 'TRAITEMENT', prevention: 'PREVENTION', agronomist: 'AGRONOME' },
   bci: { disease: 'MALADIE', symptoms: 'SYMPTOMES', treatment: 'TRAITEMENT', prevention: 'PREVENTION', agronomist: 'AGRONOME' },
 };
@@ -204,15 +200,23 @@ const COMPARE_BODY: Record<LanguageCode, { commentaire: string; actions: string;
   },
 };
 
+const COMPARE_HEADERS: Record<LanguageCode, { evolution: string; comment: string; actions: string; lesson: string }> = {
+  fr: { evolution: 'EVOLUTION', comment: 'COMMENTAIRE', actions: 'ACTIONS', lesson: 'LECON' },
+  en: { evolution: 'EVOLUTION', comment: 'COMMENT', actions: 'ACTIONS', lesson: 'LESSON' },
+  dyu: { evolution: 'EVOLUTION', comment: 'COMMENTAIRE', actions: 'ACTIONS', lesson: 'LECON' },
+  bci: { evolution: 'EVOLUTION', comment: 'COMMENTAIRE', actions: 'ACTIONS', lesson: 'LECON' },
+};
+
 function mockComparisonText(imagePath: string, lang: LanguageCode): string {
   const verdicts = COMPARE_VERDICTS[lang];
   const body = COMPARE_BODY[lang];
+  const h = COMPARE_HEADERS[lang];
   const v = verdicts[hashStr(imagePath) % verdicts.length];
   return [
-    `EVOLUTION: ${v}`,
-    `COMMENTAIRE: ${body.commentaire}`,
-    `ACTIONS: ${body.actions}`,
-    `LECON: ${body.lecon}`,
+    `${h.evolution}: ${v}`,
+    `${h.comment}: ${body.commentaire}`,
+    `${h.actions}: ${body.actions}`,
+    `${h.lesson}: ${body.lecon}`,
   ].join('\n');
 }
 
@@ -228,6 +232,22 @@ function mockContext(): LlamaContext {
     },
     release: async () => {},
   };
+}
+
+// ─── load + completion helpers ───────────────────────────────────────────
+/** Strip <think>/<reasoning>/<thought> blocks some Gemma 4 variants emit. */
+function stripThinking(text: string): string {
+  return text.replace(/<(think|reasoning|thought)>[\s\S]*?<\/\1>/gi, '').trim();
+}
+
+/** Wrap a promise with a timeout that rejects with a clear message. */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
 }
 
 export async function loadModel(): Promise<LlamaContext> {
@@ -252,15 +272,15 @@ export async function loadModel(): Promise<LlamaContext> {
       console.log('[LlamaService] initLlama on', modelLocalPath());
       const ctx = await mod.initLlama({
         model: modelLocalPath(),
-        n_ctx: 2048,
-        n_gpu_layers: 0,
+        n_ctx: 4096, // headroom for system + 2-image vision tokens + output
+        n_gpu_layers: 99, // offload all to Metal on iOS / OpenCL on Android
         n_threads: 4,
       });
       console.log('[LlamaService] ✓ main model loaded');
       if (ctx.initMultimodal && (await isMmprojDownloaded())) {
         try {
-          await ctx.initMultimodal({ path: mmprojLocalPath(), use_gpu: false });
-          console.log('[LlamaService] ✓ mmproj loaded');
+          await ctx.initMultimodal({ path: mmprojLocalPath(), use_gpu: true });
+          console.log('[LlamaService] ✓ mmproj loaded (Metal)');
         } catch (e) {
           console.warn('[LlamaService] initMultimodal failed — text-only', e);
         }
@@ -284,39 +304,49 @@ export async function loadModel(): Promise<LlamaContext> {
 }
 
 export async function unloadModel(): Promise<void> {
+  loadInFlight = null;
   if (llamaCtx) {
-    await llamaCtx.release();
+    try {
+      await llamaCtx.release();
+    } catch {
+      /* may already be released */
+    }
     llamaCtx = null;
   }
+  isMockMode = false;
 }
 
+// Gemma 4 stop tokens. </s> is for LLaMA family — leaving it would let the
+// model ramble past the structured answer until n_predict ran out.
+const STOP_TOKENS = ['<end_of_turn>', '<eos>'];
+
+// ─── public API ──────────────────────────────────────────────────────────
 export async function diagnose(imageUri: string, language: LanguageCode): Promise<DiagnosisResult> {
   const ctx = await loadModel();
   const prompt = buildPrompt(imageUri, language);
   const full = `${prompt.system}\n\n${prompt.user}`;
 
   const started = Date.now();
-  const result = await ctx.completion({
-    prompt: full,
-    image_path: imageUri,
-    n_predict: 400,
-    temperature: 0.2,
-    stop: ['</s>', '<end_of_turn>'],
-  });
+  const result = await withTimeout(
+    ctx.completion({
+      prompt: full,
+      image_path: imageUri,
+      n_predict: 400,
+      temperature: 0.2,
+      stop: STOP_TOKENS,
+    }),
+    COMPLETION_TIMEOUT_MS,
+    'diagnose',
+  );
   const latencyMs = Date.now() - started;
 
-  const confidence = estimateConfidence(result.text);
+  const text = stripThinking(result.text);
+  const confidence = estimateConfidence(text);
   const version = isMockMode ? MOCK_VERSION : MODEL_VERSION;
-  return parseResponse(result.text, confidence, version, latencyMs);
+  return parseResponse(text, confidence, version, latencyMs);
 }
 
 function estimateConfidence(text: string): number {
-  // Placeholder: a real implementation reads logprobs from the completion.
-  // Mock mode caps at 0.65 — structurally consistent canned text shouldn't
-  // claim 100%. Real-model path caps at 0.9 because heuristic still
-  // can't measure true confidence; we vary slightly per response shape.
-  // Counts both French and English headers since system prompt is now
-  // language-aware.
   const sectionPairs = [
     ['MALADIE:', 'DISEASE:'],
     ['SYMPTOMES:', 'SYMPTOMS:'],
@@ -338,7 +368,11 @@ export interface ComparisonResult {
   latencyMs: number;
 }
 
-/** Local llama.cpp can only handle one image; we feed it the day-7 photo with comparison-aware prompt. */
+/** Local single-image fallback for the day-7 follow-up. The current
+ *  llama.rn `completion` binding accepts only one `image_path`, so we
+ *  feed the day-7 photo with a comparison-aware prompt that names the
+ *  Day-0 disease. When llama.rn ships multi-image support we can drop
+ *  the "_beforeUri" argument and pass both. */
 export async function compareLocal(
   _beforeUri: string,
   afterUri: string,
@@ -350,15 +384,19 @@ export async function compareLocal(
   const full = `${prompt.system}\n\n${prompt.user}`;
 
   const started = Date.now();
-  const result = await ctx.completion({
-    prompt: full,
-    image_path: afterUri,
-    n_predict: 250,
-    temperature: 0.2,
-    stop: ['</s>', '<end_of_turn>'],
-  });
+  const result = await withTimeout(
+    ctx.completion({
+      prompt: full,
+      image_path: afterUri,
+      n_predict: 250,
+      temperature: 0.2,
+      stop: STOP_TOKENS,
+    }),
+    COMPLETION_TIMEOUT_MS,
+    'compareLocal',
+  );
   return {
-    text: result.text,
+    text: stripThinking(result.text),
     modelVersion: isMockMode ? `${MOCK_VERSION}-compare` : `${MODEL_VERSION}-compare-1img`,
     latencyMs: Date.now() - started,
   };
