@@ -128,12 +128,17 @@ function hashStr(s: string): number {
  *  content in the right language. The user-prompt strings are language-tagged
  *  in promptBuilder; we match on stable substrings. */
 function detectLang(prompt: string): LanguageCode {
-  if (prompt.includes('[FR→DYU')) return 'dyu';
-  if (prompt.includes('[FR→BCI')) return 'bci';
-  if (/Look at this cocoa pod|Compare with photo 2|7 days later|7 days ago/i.test(prompt)) {
-    return 'en';
-  }
-  return 'fr';
+  let lang: LanguageCode = 'fr';
+  if (prompt.includes('[FR→DYU')) lang = 'dyu';
+  else if (prompt.includes('[FR→BCI')) lang = 'bci';
+  else if (
+    /Look at this cocoa pod|Compare with photo 2|7 days later|7 days ago|What disease is this/i.test(
+      prompt,
+    )
+  )
+    lang = 'en';
+  console.log('[LlamaService] detectLang →', lang, 'first 80 chars of user prompt:', prompt.slice(prompt.indexOf('\n\n') + 2, prompt.indexOf('\n\n') + 82));
+  return lang;
 }
 
 function pickStr(m: Record<string, string>, lang: LanguageCode): string {
