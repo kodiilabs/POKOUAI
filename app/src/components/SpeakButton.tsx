@@ -31,18 +31,32 @@ export default function SpeakButton({ text, language, label, style }: Props) {
       return;
     }
     if (speaking) {
+      console.log('[SpeakButton] stop');
       await stopSpeaking();
       setSpeaking(false);
       return;
     }
     try {
+      console.log('[SpeakButton] play', { language, length: text.length });
       setSpeaking(true);
-      await speak(text, language);
-      // expo-speech doesn't give us a clean "done" callback in all versions —
-      // poll for ~30s as a safety; the UI just shows ▶ until pressed again.
-      setTimeout(() => setSpeaking(false), 30_000);
-    } catch {
+      await speak(text, language, {
+        onDone: () => setSpeaking(false),
+        onError: (err) => {
+          console.error('[SpeakButton] TTS error', err);
+          setSpeaking(false);
+          Alert.alert(
+            t('speech.unavailable_title'),
+            String((err as { message?: string })?.message ?? err) || t('speech.unavailable_body'),
+          );
+        },
+      });
+    } catch (err) {
+      console.error('[SpeakButton] speak() threw', err);
       setSpeaking(false);
+      Alert.alert(
+        t('speech.unavailable_title'),
+        String((err as Error)?.message ?? 'Unknown TTS error'),
+      );
     }
   };
 

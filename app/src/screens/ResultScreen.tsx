@@ -82,13 +82,16 @@ export default function ResultScreen({ route, navigation }: Props) {
           </View>
           <SpeakButton
             language={d.language}
-            text={diagnosisToSpeech({
-              diseaseName: d.diseaseName,
-              symptoms: d.symptoms,
-              treatment: d.treatment,
-              prevention: d.prevention,
-              agronomistAdvice: d.agronomistAdvice,
-            })}
+            text={diagnosisToSpeech(
+              {
+                diseaseName: d.diseaseName,
+                symptoms: d.symptoms,
+                treatment: d.treatment,
+                prevention: d.prevention,
+                agronomistAdvice: d.agronomistAdvice,
+              },
+              d.language,
+            )}
             style={styles.speakBtn}
           />
         </View>
