@@ -131,13 +131,15 @@ function detectLang(prompt: string): LanguageCode {
   let lang: LanguageCode = 'fr';
   if (prompt.includes('[FR→DYU')) lang = 'dyu';
   else if (prompt.includes('[FR→BCI')) lang = 'bci';
+  // Now that the system prompt is language-aware, English mode has many
+  // English-only markers (DISEASE:, "in English", "Black pod rot", etc.).
   else if (
-    /Look at this cocoa pod|Compare with photo 2|7 days later|7 days ago|What disease is this/i.test(
+    /\bDISEASE:|in English|Look at this cocoa pod|Respond ONLY in the following|Black pod rot|Frosty pod rot|What disease is this/i.test(
       prompt,
     )
   )
     lang = 'en';
-  console.log('[LlamaService] detectLang →', lang, 'first 80 chars of user prompt:', prompt.slice(prompt.indexOf('\n\n') + 2, prompt.indexOf('\n\n') + 82));
+  console.log('[LlamaService] detectLang →', lang);
   return lang;
 }
 
@@ -148,17 +150,27 @@ function pickArr(m: Record<string, string[]>, lang: LanguageCode): string[] {
   return m[lang] ?? m.fr ?? [];
 }
 
+/** Headers per language so the mock matches the language-aware system prompt. */
+const HEADERS: Record<LanguageCode, { disease: string; symptoms: string; treatment: string; prevention: string; agronomist: string }> = {
+  fr: { disease: 'MALADIE', symptoms: 'SYMPTOMES', treatment: 'TRAITEMENT', prevention: 'PREVENTION', agronomist: 'AGRONOME' },
+  en: { disease: 'DISEASE', symptoms: 'SYMPTOMS', treatment: 'TREATMENT', prevention: 'PREVENTION', agronomist: 'AGRONOMIST' },
+  // dyu/bci keep French headers for now — translation isn't validated, headers stable for parsing
+  dyu: { disease: 'MALADIE', symptoms: 'SYMPTOMES', treatment: 'TRAITEMENT', prevention: 'PREVENTION', agronomist: 'AGRONOME' },
+  bci: { disease: 'MALADIE', symptoms: 'SYMPTOMES', treatment: 'TRAITEMENT', prevention: 'PREVENTION', agronomist: 'AGRONOME' },
+};
+
 function mockDiagnosisText(imagePath: string, lang: LanguageCode): string {
   const id = MOCK_DISEASES[hashStr(imagePath) % MOCK_DISEASES.length];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const e = (diseases as any).diseases?.[id];
-  if (!e) return 'MALADIE: Non identifié';
+  const h = HEADERS[lang];
+  if (!e) return `${h.disease}: Non identifié`;
   return [
-    `MALADIE: ${pickStr(e.names, lang)}`,
-    `SYMPTOMES:\n- ${pickArr(e.symptoms, lang).join('\n- ')}`,
-    `TRAITEMENT:\n- ${pickArr(e.treatment, lang).join('\n- ')}`,
-    `PREVENTION:\n- ${pickArr(e.prevention, lang).join('\n- ')}`,
-    `AGRONOME: ${pickStr(e.when_to_call_agronomist, lang)}`,
+    `${h.disease}: ${pickStr(e.names, lang)}`,
+    `${h.symptoms}:\n- ${pickArr(e.symptoms, lang).join('\n- ')}`,
+    `${h.treatment}:\n- ${pickArr(e.treatment, lang).join('\n- ')}`,
+    `${h.prevention}:\n- ${pickArr(e.prevention, lang).join('\n- ')}`,
+    `${h.agronomist}: ${pickStr(e.when_to_call_agronomist, lang)}`,
   ].join('\n');
 }
 
@@ -303,12 +315,19 @@ function estimateConfidence(text: string): number {
   // Mock mode caps at 0.65 — structurally consistent canned text shouldn't
   // claim 100%. Real-model path caps at 0.9 because heuristic still
   // can't measure true confidence; we vary slightly per response shape.
-  const sections = ['MALADIE:', 'SYMPTOMES:', 'TRAITEMENT:', 'PREVENTION:'];
-  const present = sections.filter((s) => text.includes(s)).length;
-  const base = present / sections.length;
-  if (/incertain|non analysable|non identifi/i.test(text)) return Math.min(base * 0.5, 0.4);
+  // Counts both French and English headers since system prompt is now
+  // language-aware.
+  const sectionPairs = [
+    ['MALADIE:', 'DISEASE:'],
+    ['SYMPTOMES:', 'SYMPTOMS:'],
+    ['TRAITEMENT:', 'TREATMENT:'],
+    ['PREVENTION:'],
+  ];
+  const present = sectionPairs.filter((alts) => alts.some((s) => text.includes(s))).length;
+  const base = present / sectionPairs.length;
+  if (/incertain|uncertain|non analysable|not analyzable|non identifi|unidentif/i.test(text))
+    return Math.min(base * 0.5, 0.4);
   const cap = isMockMode ? 0.65 : 0.9;
-  // Slight per-response jitter so the band varies across diagnoses
   const jitter = (text.length % 10) / 100;
   return Math.max(0.5, Math.min(cap, base * cap + jitter));
 }

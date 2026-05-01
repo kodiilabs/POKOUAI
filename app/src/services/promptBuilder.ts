@@ -4,9 +4,17 @@ import type { LanguageCode } from '@/types';
 
 type LangMap = Record<LanguageCode, string>;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DIAGNOSIS_SYSTEM = (diagnosisCfg as any).system_by_lang as LangMap;
 const DIAGNOSIS_USER = diagnosisCfg.user_by_lang as LangMap;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const COMPARE_SYSTEM = (comparisonCfg as any).system_by_lang as LangMap;
 const COMPARE_USER_2 = comparisonCfg.user_two_image_by_lang as LangMap;
 const COMPARE_USER_1 = comparisonCfg.user_single_image_by_lang as LangMap;
+
+function pick(map: LangMap, language: LanguageCode): string {
+  return map[language] ?? map.fr;
+}
 
 export interface BuiltPrompt {
   system: string;
@@ -17,8 +25,8 @@ export interface BuiltPrompt {
 
 export function buildPrompt(imagePath: string, language: LanguageCode): BuiltPrompt {
   return {
-    system: diagnosisCfg.system,
-    user: DIAGNOSIS_USER[language],
+    system: pick(DIAGNOSIS_SYSTEM, language),
+    user: pick(DIAGNOSIS_USER, language),
     imagePath,
     language,
   };
@@ -39,8 +47,8 @@ export function buildComparisonPrompt(
   diseaseName: string,
 ): BuiltComparisonPrompt {
   return {
-    system: comparisonCfg.system,
-    user: COMPARE_USER_2[language].replace('{disease}', diseaseName),
+    system: pick(COMPARE_SYSTEM, language),
+    user: pick(COMPARE_USER_2, language).replace('{disease}', diseaseName),
     beforePath,
     afterPath,
     language,
@@ -54,8 +62,8 @@ export function buildComparisonPromptSingle(
   diseaseName: string,
 ): BuiltPrompt {
   return {
-    system: comparisonCfg.system,
-    user: COMPARE_USER_1[language].replace('{disease}', diseaseName),
+    system: pick(COMPARE_SYSTEM, language),
+    user: pick(COMPARE_USER_1, language).replace('{disease}', diseaseName),
     imagePath: afterPath,
     language,
   };

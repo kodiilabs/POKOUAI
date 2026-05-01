@@ -9,14 +9,26 @@ const DISEASE_KEYWORDS: Array<{ id: DiseaseId; patterns: RegExp[] }> = [
   { id: 'other_damage', patterns: [/dommage/i, /unidentified/i, /non identif/i] },
 ];
 
-function extractSection(raw: string, label: string): string | null {
-  const re = new RegExp(`${label}\\s*:\\s*([\\s\\S]*?)(?=\\n[A-ZÉÀ]+\\s*:|$)`, 'i');
-  const match = raw.match(re);
-  return match?.[1]?.trim() ?? null;
+/** Header aliases — first match wins. Add new languages here as they ship. */
+const HEADER_ALIASES = {
+  disease: ['MALADIE', 'DISEASE'],
+  symptoms: ['SYMPTOMES', 'SYMPTOMS'],
+  treatment: ['TRAITEMENT', 'TREATMENT'],
+  prevention: ['PREVENTION'], // same word in fr + en
+  agronomist: ['AGRONOME', 'AGRONOMIST'],
+} as const;
+
+function extractSection(raw: string, labels: readonly string[]): string | null {
+  for (const label of labels) {
+    const re = new RegExp(`${label}\\s*:\\s*([\\s\\S]*?)(?=\\n[A-ZÉÀ]+\\s*:|$)`, 'i');
+    const match = raw.match(re);
+    if (match?.[1]) return match[1].trim();
+  }
+  return null;
 }
 
-function extractListSection(raw: string, label: string): string[] {
-  const section = extractSection(raw, label);
+function extractListSection(raw: string, labels: readonly string[]): string[] {
+  const section = extractSection(raw, labels);
   if (!section) return [];
   return section
     .split(/\n/)
@@ -43,12 +55,12 @@ export function parseResponse(
   modelVersion: string,
   latencyMs: number,
 ): DiagnosisResult {
-  const diseaseName = extractSection(raw, 'MALADIE') ?? 'Non identifié';
+  const diseaseName = extractSection(raw, HEADER_ALIASES.disease) ?? 'Non identifié';
   const disease = classifyDisease(diseaseName);
-  const symptoms = extractListSection(raw, 'SYMPTOMES');
-  const treatment = extractListSection(raw, 'TRAITEMENT');
-  const prevention = extractListSection(raw, 'PREVENTION');
-  const agronomist = extractSection(raw, 'AGRONOME') ?? '';
+  const symptoms = extractListSection(raw, HEADER_ALIASES.symptoms);
+  const treatment = extractListSection(raw, HEADER_ALIASES.treatment);
+  const prevention = extractListSection(raw, HEADER_ALIASES.prevention);
+  const agronomist = extractSection(raw, HEADER_ALIASES.agronomist) ?? '';
 
   return {
     disease,
