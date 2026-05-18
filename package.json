@@ -1,0 +1,11 @@
+{
+	"dependencies": {
+		"lucide-react-native": "^1.16.0"
+	},
+	"devDependencies": {
+		"@testing-library/react-native": "^13.3.3",
+		"@types/jest": "^30.0.0",
+		"jest": "^30.4.2",
+		"react-test-renderer": "19.2.0"
+	}
+}

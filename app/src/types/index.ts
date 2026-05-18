@@ -78,4 +78,6 @@ export type RootStackParamList = {
   GroupMode: undefined;
   FollowUp: { loopId: number };
   IntelligenceLog: undefined;
+  LiteRTSmoke: undefined;
+  SkillDemo: undefined;
 };

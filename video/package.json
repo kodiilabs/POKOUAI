@@ -1,0 +1,25 @@
+{
+  "name": "pokouai-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remotion compositions for PokouAI demo videos. Post-production: composes iOS Simulator .mov clips with title cards, captions, and side-by-side skill-level comparisons.",
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render PokouAIAutoVideo out/pokouai.mp4",
+    "render:fast": "remotion render PokouAIAutoVideo out/pokouai-draft.mp4 --concurrency=1 --crf=28",
+    "gen:voice": "node scripts/gen-voice.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "kokoro-js": "^1.2.0",
+    "typescript": "^5.7.0"
+  }
+}

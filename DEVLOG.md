@@ -83,3 +83,94 @@ Same day as Addendum v2; this addresses the limitations explicitly.
   - `PokouAI_Implementation_Checklist.md` Week 3 (loop sections, education layer, 3-tier router) and Week 4 (manual loop end-to-end test).
   - `README.md` and `.claude.md` lost the "(Addendum v2)" parenthetical; the loop is now referenced as the core product.
 - DEVLOG entries from 2026-04-24 stay verbatim — they record the actual history. The submission write-up keeps its claims-audit table.
+
+## 2026-05-02 — v1.1 backlog: model interpretability (Grad-CAM)
+- **Decision**: do NOT add Grad-CAM in v1. Logged here so it isn't lost.
+- **Why deferred**:
+  - The cheap implementation (Grad-CAM on a separately-trained EfficientNet-B0) is misleading — the heatmap shows what the *companion CNN* attended to, not what Gemma 4 actually used to diagnose. Calling that "model interpretability" to a farmer or a judge is dishonest.
+  - The honest implementation (attention rollout on Gemma 4's vision encoder) is research-grade work — extract cross-attention from the vision projector, normalize, fold layer weights, project back to 14×14 patches. Days, not hours.
+  - Neither runs on-device (Gemma 4 GGUF doesn't expose attention; llama.rn doesn't surface them either). Visualization is hub/cloud-only, eroding the offline-first pitch.
+- **v1.1 plan**:
+  - Attention-rollout path: when `react-native-llama` exposes attention tensors (open issue), wire a `services/attention.ts` that takes the post-inference rollout, resizes to image space, and overlays as a translucent jet colormap on `ResultScreen`. Hub-only at first; on-device when the binding allows.
+  - Companion-CNN path is a no-go even in v1.1 unless we restructure to "CNN classifies → Gemma 4 explains." Then Grad-CAM on the CNN is honest because the CNN *is* the classifier.
+- **What we ship in v1 instead** (today): minor `ResultScreen` polish — show the *cropped/resized image the model actually saw* (after `prepareForInference`) alongside the original, with a "What AI analyzed" caption. Honest, offline, no new dependencies.
+
+## 2026-05-05 → 2026-05-16 — Simulator runnability + language correctness + demo prep
+
+A two-week sprint focused on (a) making the app runnable end-to-end in the iOS Simulator for demo recording and (b) closing every language-leak bug we hit while testing.
+
+### Simulator runnability
+- **New Architecture** enabled in `app.json` (matches the working becanty config). Required because llama.rn now needs the new arch's bridgeless module.
+- `expo-av` → `expo-audio` for new-arch compatibility. Voice memos (hypothesis card, follow-up replay) ported to the new API.
+- `expo-file-system` legacy import for `documentDirectory` access (new SDK split the API).
+- Camera fallbacks: Simulator silently no-ops the camera; users tap **🖼 From gallery** instead. Drag-drop or `xcrun simctl addmedia` lands sample images from `data/raw/<class>/` into Photos.
+- LiteRT-LM smoke test screen (`LiteRTSmokeScreen`) gated behind `__DEV__` for binding probes.
+
+### On-device model story
+- `llama.rn` re-added with mmproj loader: `initLlama` then `initMultimodal({ path: mmprojLocalPath(), use_gpu: true })` so Metal-offloaded vision works on iOS. Falls back to text-only if mmproj load fails.
+- 10-issue llama review applied: n_ctx bumped to 2048 (1024 truncated replies mid-generation → low confidence), `n_gpu_layers: 99` for Metal offload, Gemma 4 stop tokens (`<end_of_turn>`, `<eos>`) so the model doesn't ramble past the structured answer, 90 s completion timeout, auto-unload after 30 s idle to keep RSS under iPhone jetsam, `<think>/<reasoning>/<thought>` strip pass for Gemma 4 variants that emit reasoning blocks, dead Hugging Face URL paths removed.
+- **Auto-download is intentionally disabled** — the previous HF path 404'd and silently wrote bad GGUFs. Models are sideloaded via Finder → iPhone → Files → PokouAI until we publish a public repo.
+- Settings → **Model version** now shows on-device readiness (`✓ ready` / `⚠ not installed`) with a sideload hint when missing. The DiagnosisScreen no longer pre-checks model readiness or offers a download button — those phases were misleading because routing prefers the hub. Diagnosis is now: image → Analyze → analyzing (tier badge) → result.
+
+### Ollama hub hardening
+- Per-call timeout, exponential retry (500 ms × attempt), structured logging, `keep_alive` honored so the model stays warm between calls in a recording session, URL validation up-front (catches typo'd `http://`), `<think>` block stripping (Gemma 4 27B occasionally emits reasoning).
+
+### Language correctness — the long tail
+A series of bugs where French leaked into otherwise-English UI. Each fix below was driven by a real test session.
+- **Prompts were forcing French output.** `data/prompts/diagnosis.json` now has `system_by_lang` + `user_by_lang` maps with proper English headers (`DISEASE:` / `SYMPTOMS:` / `TREATMENT:` / `PREVENTION:` / `AGRONOMIST:`). Response parser updated to accept either header set via `HEADER_ALIASES`.
+- **Mock detected the wrong language.** `detectLang` checks French-marker phrases (`[FR→DYU`, `[FR→BCI`) first, then English signals (`DISEASE:`, `in English`, `Look at this cocoa pod`, `Respond ONLY in`, etc.), with French as the default.
+- **Language change required app restart.** `setLanguage` now drops the cached `LlamaContext` via `unloadModel()` so the next diagnosis re-creates the mock closure against the new language.
+- **Mock was always picking the same disease.** `mockDiagnosisText` now hashes the image path → picks one of `MOCK_DISEASES`, so flipping between sample images produces varied output.
+- **Mock leaked the only hardcoded French string.** Response parser's fallback was `?? 'Non identifié'` — when the model output had no `DISEASE:` header, that French string was stored in the DB and rendered on Home (recent-diagnoses card) + Result (title) next to English `t(…)` labels. Parser now returns empty `diseaseName`; UI substitutes a localized label (`result.unidentified_short`). The LlamaService mock's defensive fallback dropped the hardcoded text too.
+- **TTS section labels were French regardless of language.** `diagnosisToSpeech` builds section headers from the user's language; `SpeakButton` wires proper TTS callbacks (`onStart` / `onDone` / `onStopped` / `onError`).
+- **i18next `pluralResolver` warning on every boot.** Hermes lacks `Intl.PluralRules`; `compatibilityJSON: 'v3'` skips the probe i18next does for v4. No plural keys in the locale files, so format choice is otherwise moot.
+
+### Honest confidence + demo trust
+- **Mock badge**: Result page renders a red `DEMO` chip when `modelVersion` ends in `-MOCK`. No more confusion between a real on-device result and the deterministic mock during recording.
+- **Confidence estimator**: `estimateHubConfidence` counts which of the four section headers are present (`DISEASE` / `SYMPTOMS` / `TREATMENT` / `PREVENTION`), penalizes any "uncertain" / "non identifié" / "unidentified" tokens (cap 0.4), otherwise returns `0.6 + present × 0.35` (cap 0.95). Replaces the previous fixed 0.85.
+
+### Dev tooling
+- **Settings → Dev → 🗑 Clear all diagnoses** wipes both `loops` and `diagnoses` and resets `sqlite_sequence`. Wrapped in a native `Alert.alert` confirm (destructive button). Gated behind `__DEV__`. Use it before every demo take so the Home recent-diagnoses list starts empty.
+
+### Docs
+- `docs/demo.md` updated for the iOS Simulator path (no camera → gallery + `xcrun simctl addmedia`), the model-status pre-flight, and the clear-diagnoses pre-record step. The "French/English mix" troubleshooting row now references the parser fix and points at *Clear diagnoses* for pre-fix DB rows.
+- `README.md` quick-start no longer promises an auto-download. It enumerates the three runnable paths: sideload, hub mode (the demo path), and simulator mock.
+- `docs/personas/` added — short user-profile briefs used with the `persona-tester` skill during simulator audits.
+
+## 2026-05-16 — LiteRT-LM wired into the local tier
+
+- `services/LiteRTService.ts` added — lazy-imports `react-native-litert-lm@0.3.7`, exposes `diagnose` / `compareLocal` / `isModelReady` / `unloadModel` matching `LlamaService`'s shape so the router can swap them. Vision via `sendMessageWithImage`; `resetConversation()` runs per call so prior turns don't leak. 30 s auto-unload mirrors LlamaService.
+- **Load policy**: prefer sideloaded `cocoa_v1_e2b.litertlm`, else the smoke-screen-downloaded upstream `gemma-3n-e2b-int4.litertlm`. No silent auto-download in the diagnose hot path — that stays an explicit one-time tap in *Settings → LiteRT smoke test* so a farmer offline doesn't get blocked on 1.3 GB.
+- **Router** (`InferenceRouter.ts`): local tier is now "prefer LiteRT, fall back to llama.rn". `isLocalReady() = isLiteRTReady() || isLlamaReady()`. Inside `diagnoseLocal` / `compareLocal`, if LiteRT is on-disk we try it first; on any throw we fall through to llama.rn. The existing hub→cloud→local fallback chain is untouched.
+- Settings model-readiness row now ORs both backends so the green ✓ fires when either has its file on-disk.
+- Notebook `ml/notebooks/04_quantize_litert_lm.ipynb` still produces the fine-tuned `.litertlm` artifact; until that artifact ships, LiteRT runs the upstream Gemma 3n E2B INT4 base (quality on par with pre-fine-tune llama.rn).
+- llama.rn stays on disk for now as the local-tier safety net. Removal can come once LiteRT has logged enough real-device runs.
+
+## 2026-05-17 — Notebook 04 rewritten to use `litert-torch export_hf`
+
+- **Correction of yesterday's notebook 04**: I had it routed through `ai-edge-torch` + `litert-lm-builder` because my source survey at the time hit the LiteRT-LM `/cli` docs page (silent on packaging) and concluded no public path existed for user fine-tunes. Wrong. Google's `models/gemma-4` docs (updated 2026-05-01) ship a "Deploy from Safetensors" section with `litert-torch export_hf` as the supported, one-command path from merged HF → `.litertlm`. The earlier dance (re-author Gemma 4 in PyTorch → quantize to TFLite via `ai-edge-torch` → repackage via `litert-lm-builder`) is obsolete and was failing on the Kaggle env (wheel-stripping + torchao ABI conflicts). Rewrote the notebook from 22 cells to 11.
+- **New flow**: `pip install uv` → `uv tool install litert-torch-nightly litert-lm` → `litert-torch export_hf --model=<merged_dir> --output_dir=<out> --externalize_embedder --jinja_chat_template_override=litert-community/gemma-4-E2B-it-litert-lm` → smoke-test with `litert-lm run <path> --prompt=...` → download / sideload.
+- **`--externalize_embedder` is non-optional for Gemma 4 E2B/E4B**: Per-Layer Embeddings tables are large; default inline-export either fails or produces a bundle that won't load in mobile RAM. This is the same root cause as the 900 MB GGUF problem in notebook 03's old GGUF artefact — llama.cpp's converter silently drops the PLE tables (upstream issue #22243). Skip GGUF for Gemma 4 entirely until that lands.
+- **Multimodal carries automatically** through `export_hf` — it reads the vision tower from the merged safetensors directly. The standalone `cocoa_v1_e2b-mmproj.gguf` from the old GGUF flow is unused.
+- **App side: no changes**. The 2026-05-16 wiring (`LiteRTService.ts`, router prefers LiteRT → falls back to llama.rn, smoke screen, Settings readiness row) all stands as-is; `react-native-litert-lm@0.3.7` already supports `sendMessageWithImage`. The fine-tune drops in as a sideloaded `cocoa_v1_e2b.litertlm` and the router picks it up over the upstream Gemma 3n base.
+- **Validation must happen on a physical device** — iOS Simulator and x86_64 Android emulators don't run the AI Edge native engines. iPhone 15 Pro / Pixel 8+ for usable t/s on E2B.
+
+## 2026-05-16 — REQ-002 opened (non-reader UI redesign)
+- **Trigger**: persona walkthroughs revealed Aminata (Dioula non-reader) blocked on every screen today; Kouassi (Baoulé partial-literate) blocked on 12/13. App is text-heavy with emoji-as-icons.
+- **REQ written** at [`.adlc/requirements/REQ-002-non-reader-redesign.md`](.adlc/requirements/REQ-002-non-reader-redesign.md) — 13-screen icon-first redesign (`lucide-react-native` locked), opt-in audio (Listen button), ≤2-word labels with documented 3-word exception escape hatch for dyu/bci. Hybrid success metric (persona-test gate + code-audit gate). 50 ms / 300 KB budgets.
+- **Architect output** at [`REQ-002-design.md`](.adlc/requirements/REQ-002-design.md), tasks at [`REQ-002-tasks.md`](.adlc/requirements/REQ-002-tasks.md), eval at [`.adlc/evals/REQ-002/`](.adlc/evals/REQ-002/) — 5 primitives (Pictogram, ListenButton, IconAction, StatusBadge, SectionHeader), 52 tasks across 7 waves, critical path W0 → W1 → W4 → /validate.
+- **Wave 0 baselines captured** for all 6 personas at SHA `49ca416` — Aminata 0/13 Pass, Kouassi 1/13, Ibrahim 4/13 (Result trust-break flagged), Adjoa 5/13, Priya 9/13, Yao 13/13.
+- **Pre-Wave-1 defect fixes shipped** (caught by Yao + Priya baselines): missing `hub.model_cocoa_hint` / `hub.model_e2b_hint` keys added to en/fr/bci/dyu; dead `group.note_no_save` string now rendered in [GroupModeScreen](app/src/screens/GroupModeScreen.tsx).
+
+## 2026-05-17 — REQ-002 rev 2 (Farmer Agent doc parked)
+- **Trigger**: user rewrote [`docs/PokouAI_Future_of_Learning.md`](docs/PokouAI_Future_of_Learning.md) into a Farmer Agent + 5-skill + Two-Track architecture proposal.
+- **Decision via /spec re-interview**: all 7 intersection questions converged on "park the agent for a future REQ — REQ-002 ships only the 'First Time' UI baseline." `IconAction.label` is designed to be cleanly toggleable so a future App Familiarity Flag REQ can swap labels off without component changes.
+- **Two new assumptions logged** in [`ASSUMPTIONS.md`](.adlc/assumptions/ASSUMPTIONS.md): agent infra deferred to REQ-TBD; `IconAction.label` must remain optional.
+- **Wave 1 scaffolding partial**: `react-native-svg@15.15.3` installed; Jest config + canary import test written; `lucide-react-native` + remaining Jest deps queued in `app/package.json` pending `pnpm install` in `app/`.
+
+## 2026-05-18 — Farmer Agent demo prototype + Remotion post-production
+- **Trigger**: user needed a video-ready demo of the Farmer Agent framework for hackathon reviewers within ~2 hours; REQ-002 Wave 1 paused.
+- **Sample-data demo built** — [`app/src/data/skill_demo.json`](app/src/data/skill_demo.json) covers 5 flow stages (Onboard → Diagnose → Result → Day 7 → Lesson) × 3 skill levels (Novice / Practitioner / Expert) for one disease scenario (black pod, forest-edge plot, post-rain). Mirrors the "What Changes at Each Level" table from PokouAI_Future_of_Learning.md.
+- **New screen** [`SkillDemoScreen.tsx`](app/src/screens/SkillDemoScreen.tsx) — stage stepper (5 chips, horizontal scroll) over a 3-level switcher. Tapping a stage or level re-renders every section with that combination. Agent-memory footer changes with level; scenario card stays constant for video continuity. Wired into navigation (`SkillDemo` route) and HomeScreen ("🎬 Farmer Agent — Skill demo" tile below Group Mode).
+- **Remotion post-production project** at [`video/`](video/) — 3 compositions: `TitleOnly` (5 s portrait), `SkillComparison` (25 s landscape, three-panel novice/practitioner/expert with simulator clips), `PokouAISkillDemo` (90 s portrait master). Workflow: capture iOS-Simulator `.mov` clips → drop into `video/public/clips/` with named filenames → `pnpm render`. Remotion is *not* a screen recorder; it composes captured clips with title cards, captions, and side-by-side layouts.
+- **Still hardcoded / mock** (explicit for reviewers): no skill tracker, no voice ASR for Farmer Speaks First, no Day-7 follow-up wired to real outcomes, no Knowledge Stack retrieval, no App Familiarity Flag. The demo shows the *framework*, not a running agent — stated in the screen's footer and the Remotion README.

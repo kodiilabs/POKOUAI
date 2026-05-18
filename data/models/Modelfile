@@ -1,0 +1,11 @@
+# PokouAI Cocoa Disease Detection Model
+# Requires: cocoa_v1_e2b.gguf (main model)
+#           cocoa_v1_e2b-mmproj.gguf (multimodal projection for vision)
+# Both files must be in the same directory for vision support
+
+FROM ./cocoa_v1_e2b.gguf
+
+# Vision/multimodal support (requires mmproj file above)
+PARAMETER temperature 0.2
+PARAMETER num_predict 400
+PARAMETER num_ctx 2048

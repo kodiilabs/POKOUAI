@@ -6,8 +6,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { getDiagnosis, type DiagnosisRow } from '@/services/db';
 import { diagnosisToSpeech } from '@/services/speech';
+import { getSources } from '@/services/knowledge';
 import HypothesisCard from '@/components/HypothesisCard';
 import SpeakButton from '@/components/SpeakButton';
+import { useSkillLevel } from '@/hooks/useSkillLevel';
 import type { ConfidenceBand, InferenceTier, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -24,6 +26,8 @@ const TIER_LABEL: Record<InferenceTier, string> = {
   cloud: '☁️ Cloud · 27B',
 };
 
+const SKILL_LABEL = { novice: 'Novice', practitioner: 'Practitioner', expert: 'Expert' } as const;
+
 function bandFor(c: number): ConfidenceBand {
   if (c >= 0.8) return 'high';
   if (c >= 0.55) return 'medium';
@@ -34,6 +38,7 @@ export default function ResultScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const { diagnosisId } = route.params;
   const [d, setD] = useState<DiagnosisRow | null>(null);
+  const [skillLevel] = useSkillLevel();
 
   useEffect(() => {
     (async () => setD(await getDiagnosis(diagnosisId)))();
@@ -48,10 +53,19 @@ export default function ResultScreen({ route, navigation }: Props) {
   }
 
   const band = bandFor(d.confidence);
+  const isMock = d.modelVersion.includes('MOCK');
+  // When the model output had no DISEASE: header, diseaseName is empty and
+  // symptoms/treatment are empty too. Show the localized "couldn't identify"
+  // card instead of the treatment UI.
+  const isUnidentified =
+    d.disease === 'other_damage' &&
+    d.treatment.length === 0 &&
+    d.symptoms.length === 0;
+  const displayName = d.diseaseName || t('result.unidentified_short');
 
   const onShare = async () => {
     const message =
-      `${t('result.disease')}: ${d.diseaseName}\n` +
+      `${t('result.disease')}: ${displayName}\n` +
       `${t('result.confidence')}: ${(d.confidence * 100).toFixed(0)}%\n\n` +
       `${t('result.treatment')}:\n- ${d.treatment.join('\n- ')}\n\n` +
       `— PokouAI`;
@@ -64,27 +78,34 @@ export default function ResultScreen({ route, navigation }: Props) {
         <Image source={{ uri: d.imageUri }} style={styles.image} />
 
         <View style={styles.header}>
-          <Text style={styles.disease}>{d.diseaseName}</Text>
+          <Text style={styles.disease}>{displayName}</Text>
           <View style={styles.badgeRow}>
             <View style={[styles.band, { backgroundColor: BAND_COLORS[band] }]}>
               <Text style={styles.bandText}>
                 {t('result.confidence')}: {(d.confidence * 100).toFixed(0)}% · {t(`result.confidence_${band}`)}
               </Text>
             </View>
-            <View style={styles.tierBadge}>
-              <Text style={styles.tierBadgeText}>{TIER_LABEL[d.tier]}</Text>
-            </View>
-            {d.modelVersion.includes('MOCK') && (
+            {!isMock && (
+              <View style={styles.tierBadge}>
+                <Text style={styles.tierBadgeText}>{TIER_LABEL[d.tier]}</Text>
+              </View>
+            )}
+            {isMock && (
               <View style={styles.demoBadge}>
                 <Text style={styles.demoBadgeText}>DEMO</Text>
               </View>
             )}
+            <View style={styles.adaptedBadge}>
+              <Text style={styles.adaptedBadgeText}>
+                🧠 Adapted for {SKILL_LABEL[skillLevel]}
+              </Text>
+            </View>
           </View>
           <SpeakButton
             language={d.language}
             text={diagnosisToSpeech(
               {
-                diseaseName: d.diseaseName,
+                diseaseName: displayName,
                 symptoms: d.symptoms,
                 treatment: d.treatment,
                 prevention: d.prevention,
@@ -96,16 +117,44 @@ export default function ResultScreen({ route, navigation }: Props) {
           />
         </View>
 
-        <HypothesisCard diagnosisId={diagnosisId} diseaseName={d.diseaseName} />
+        {isUnidentified ? (
+          <View style={styles.uncertainCard}>
+            <Text style={styles.uncertainTitle}>🤔 {t('result.unidentified_title')}</Text>
+            <Text style={styles.uncertainBody}>{t('result.unidentified_body')}</Text>
+            <TouchableOpacity
+              style={styles.uncertainBtn}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.uncertainBtnText}>📷 {t('diagnosis.retake')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <HypothesisCard diagnosisId={diagnosisId} diseaseName={displayName} />
 
-        <Section title={t('result.symptoms')} items={d.symptoms} />
-        <Section title={t('result.treatment')} items={d.treatment} />
-        <Section title={t('result.prevention')} items={d.prevention} />
+            <Section title={t('result.symptoms')} items={d.symptoms} />
+            <Section title={t('result.treatment')} items={d.treatment} />
+            <Section title={t('result.prevention')} items={d.prevention} />
 
-        <View style={styles.callout}>
-          <Text style={styles.calloutTitle}>📞 {t('result.agronomist')}</Text>
-          <Text style={styles.calloutBody}>{d.agronomistAdvice}</Text>
-        </View>
+            {d.agronomistAdvice.trim().length > 0 && (
+              <View style={styles.callout}>
+                <Text style={styles.calloutTitle}>📞 {t('result.agronomist')}</Text>
+                <Text style={styles.calloutBody}>{d.agronomistAdvice}</Text>
+              </View>
+            )}
+          </>
+        )}
+
+        {(() => {
+          const srcs = getSources(d.disease);
+          if (srcs.length === 0) return null;
+          return (
+            <View style={styles.sources}>
+              <Text style={styles.sourcesLabel}>📚 {t('result.sources')}</Text>
+              <Text style={styles.sourcesBody}>{srcs.join(' · ')}</Text>
+            </View>
+          );
+        })()}
 
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -168,6 +217,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#c62828',
   },
   demoBadgeText: { color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  adaptedBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#6a1b9a',
+  },
+  adaptedBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   speakBtn: { marginTop: 8 },
   section: {
     backgroundColor: '#fff',
@@ -205,4 +261,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareBtnText: { color: '#fff', fontWeight: '700' },
+  sources: {
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sourcesLabel: { fontSize: 11, color: '#558b2f', fontWeight: '700', marginBottom: 2, letterSpacing: 0.5 },
+  sourcesBody: { fontSize: 11, color: '#616161', lineHeight: 16 },
+  uncertainCard: {
+    backgroundColor: '#fff8e1',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f9a825',
+    marginBottom: 16,
+  },
+  uncertainTitle: { fontSize: 16, fontWeight: '700', color: '#e65100', marginBottom: 6 },
+  uncertainBody: { color: '#4e342e', lineHeight: 20, marginBottom: 12 },
+  uncertainBtn: {
+    backgroundColor: '#1b5e20',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  uncertainBtnText: { color: '#fff', fontWeight: '700' },
 });

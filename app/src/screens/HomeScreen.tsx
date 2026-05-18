@@ -120,7 +120,7 @@ export default function HomeScreen({ navigation }: Props) {
             >
               <Image source={{ uri: d.imageUri }} style={styles.thumb} />
               <View style={styles.cardBody}>
-                <Text style={styles.cardTitle}>{d.diseaseName}</Text>
+                <Text style={styles.cardTitle}>{d.diseaseName || t('result.unidentified_short')}</Text>
                 <Text style={styles.cardSub}>
                   {new Date(d.createdAt).toLocaleDateString()} · {(d.confidence * 100).toFixed(0)}%
                 </Text>
@@ -154,6 +154,13 @@ export default function HomeScreen({ navigation }: Props) {
         >
           <Text style={styles.groupBtnText}>👥 {t('home.group_mode')}</Text>
           <Text style={styles.groupBtnSub}>{t('home.group_mode_sub')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.demoBtn}
+          onPress={() => navigation.navigate('SkillDemo')}
+        >
+          <Text style={styles.demoBtnText}>🧠 Farmer Agent</Text>
+          <Text style={styles.demoBtnSub}>How the app adapts to each farmer's skill level.</Text>
         </TouchableOpacity>
 
         <View style={styles.row}>
@@ -226,6 +233,14 @@ const styles = StyleSheet.create({
   },
   groupBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   groupBtnSub: { color: '#b2ebf2', fontSize: 12, marginTop: 2 },
+  demoBtn: {
+    backgroundColor: '#6a1b9a',
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 12,
+  },
+  demoBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  demoBtnSub: { color: '#e1bee7', fontSize: 12, marginTop: 2 },
   intelTile: {
     backgroundColor: '#1565c0',
     padding: 14,

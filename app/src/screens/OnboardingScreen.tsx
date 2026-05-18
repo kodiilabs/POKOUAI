@@ -4,13 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { setLanguage, SUPPORTED_LANGUAGES } from '@/i18n';
+import { isDraftLanguage, setLanguage, SUPPORTED_LANGUAGES } from '@/i18n';
 import { markOnboarded } from '@/services/preferences';
 import type { CropId, LanguageCode, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const CROPS: CropId[] = ['cocoa', 'coffee', 'cashew', 'other'];
+// Only cocoa is shipped with a full disease knowledge base — see
+// app/src/data/cocoa_diseases.json. Adding crops here without a backing
+// dataset leads to confident cocoa-disease answers on non-cocoa photos.
+const CROPS: CropId[] = ['cocoa'];
 
 export default function OnboardingScreen({ navigation }: Props) {
   const { t, i18n } = useTranslation();
@@ -46,6 +49,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               >
                 <Text style={[styles.choiceText, lang === l && styles.choiceTextActive]}>
                   {t(`lang.${l}`)}
+                  {isDraftLanguage(l) ? `  ${t('lang.draft_label')}` : ''}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -69,6 +73,7 @@ export default function OnboardingScreen({ navigation }: Props) {
                 </Text>
               </TouchableOpacity>
             ))}
+            <Text style={styles.consentBody}>{t('onboarding.crop_cocoa_only_note')}</Text>
             <TouchableOpacity style={styles.cta} onPress={() => setStep('consent')}>
               <Text style={styles.ctaText}>{t('onboarding.continue')}</Text>
             </TouchableOpacity>

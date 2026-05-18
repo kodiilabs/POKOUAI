@@ -55,7 +55,9 @@ export function parseResponse(
   modelVersion: string,
   latencyMs: number,
 ): DiagnosisResult {
-  const diseaseName = extractSection(raw, HEADER_ALIASES.disease) ?? 'Non identifié';
+  // Empty when no header / no value parsed. UI substitutes a localized
+  // "not identified" label so the stored string is never language-bound.
+  const diseaseName = extractSection(raw, HEADER_ALIASES.disease) ?? '';
   const disease = classifyDisease(diseaseName);
   const symptoms = extractListSection(raw, HEADER_ALIASES.symptoms);
   const treatment = extractListSection(raw, HEADER_ALIASES.treatment);

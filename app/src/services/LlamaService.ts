@@ -9,7 +9,9 @@ const MODEL_VERSION = 'cocoa_v1_e2b';
 const MOCK_VERSION = 'cocoa_v1_e2b-MOCK';
 const MODEL_FILENAME = 'cocoa_v1_e2b.gguf';
 const MMPROJ_FILENAME = 'cocoa_v1_e2b-mmproj.gguf';
-export const MODEL_SIZE_MB = 3200;
+// Main Q4_K_M GGUF only — matches the size quoted in README.
+// The vision projector (MMPROJ_SIZE_MB) is downloaded separately.
+export const MODEL_SIZE_MB = 1500;
 export const MMPROJ_SIZE_MB = 880;
 
 /** Generation timeout. iOS won't kill our completion call indefinitely; the
@@ -27,6 +29,7 @@ type LlamaModule = {
   initLlama: (config: {
     model: string;
     n_ctx?: number;
+    n_batch?: number;
     n_gpu_layers?: number;
     n_threads?: number;
   }) => Promise<LlamaContext>;
@@ -76,15 +79,27 @@ function mmprojLocalPath(): string {
 }
 
 async function fileExists(path: string, minSize = 1_000_000): Promise<boolean> {
-  const info = await FileSystem.getInfoAsync(path);
-  return info.exists && info.size !== undefined && info.size > minSize;
+  try {
+    const info = await FileSystem.getInfoAsync(path);
+    const size = info.exists ? info.size : undefined;
+    const exists = info.exists && size !== undefined && size > minSize;
+    console.log(`[LlamaService] fileExists(${path}): exists=${info.exists}, size=${size}, minSize=${minSize}, result=${exists}`);
+    return exists;
+  } catch (e) {
+    console.error(`[LlamaService] fileExists error for ${path}:`, e);
+    return false;
+  }
 }
 
 export async function isModelDownloaded(): Promise<boolean> {
-  return fileExists(modelLocalPath());
+  const path = modelLocalPath();
+  console.log(`[LlamaService] checking model at: ${path}`);
+  return fileExists(path);
 }
 export async function isMmprojDownloaded(): Promise<boolean> {
-  return fileExists(mmprojLocalPath(), 100_000);
+  const path = mmprojLocalPath();
+  console.log(`[LlamaService] checking mmproj at: ${path}`);
+  return fileExists(path, 100_000);
 }
 
 /** True if inference can run *now*: either the GGUF is sideloaded, or the
@@ -137,12 +152,11 @@ function detectLang(prompt: string): LanguageCode {
     )
   )
     lang = 'en';
-  console.log('[LlamaService] detectLang →', lang);
   return lang;
 }
 
 function pickStr(m: Record<string, string>, lang: LanguageCode): string {
-  return m[lang] ?? m.fr;
+  return m[lang] ?? m.fr ?? '';
 }
 function pickArr(m: Record<string, string[]>, lang: LanguageCode): string[] {
   return m[lang] ?? m.fr ?? [];
@@ -158,9 +172,9 @@ const HEADERS: Record<LanguageCode, { disease: string; symptoms: string; treatme
 function mockDiagnosisText(imagePath: string, lang: LanguageCode): string {
   const id = MOCK_DISEASES[hashStr(imagePath) % MOCK_DISEASES.length];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const e = (diseases as any).diseases?.[id];
+  const e = id ? (diseases as any).diseases?.[id] : undefined;
   const h = HEADERS[lang];
-  if (!e) return `${h.disease}: Non identifié`;
+  if (!e) return `${h.disease}:`;
   return [
     `${h.disease}: ${pickStr(e.names, lang)}`,
     `${h.symptoms}:\n- ${pickArr(e.symptoms, lang).join('\n- ')}`,
@@ -235,6 +249,16 @@ function mockContext(): LlamaContext {
 }
 
 // ─── load + completion helpers ───────────────────────────────────────────
+/** Auto-unload timer: keep model warm for 30s, then release to save RAM. */
+let unloadTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleUnload(): void {
+  if (unloadTimer) clearTimeout(unloadTimer);
+  unloadTimer = setTimeout(() => {
+    unloadModel().catch(() => {});
+    unloadTimer = null;
+  }, 30_000);
+}
+
 /** Strip <think>/<reasoning>/<thought> blocks some Gemma 4 variants emit. */
 function stripThinking(text: string): string {
   return text.replace(/<(think|reasoning|thought)>[\s\S]*?<\/\1>/gi, '').trim();
@@ -272,7 +296,10 @@ export async function loadModel(): Promise<LlamaContext> {
       console.log('[LlamaService] initLlama on', modelLocalPath());
       const ctx = await mod.initLlama({
         model: modelLocalPath(),
-        n_ctx: 4096, // headroom for system + 2-image vision tokens + output
+        // 2048 is the floor for Gemma 4 multimodal: system (~500) + image (256) + user (~100) + 400-token reply.
+        // 1024 truncates the reply mid-generation → "uncertain" / missing sections → low confidence.
+        // n_batch left at llama.rn default — llama.cpp requires n_batch ≥ n_ubatch (512) or init fails.
+        n_ctx: 2048,
         n_gpu_layers: 99, // offload all to Metal on iOS / OpenCL on Android
         n_threads: 4,
       });
@@ -326,24 +353,28 @@ export async function diagnose(imageUri: string, language: LanguageCode): Promis
   const prompt = buildPrompt(imageUri, language);
   const full = `${prompt.system}\n\n${prompt.user}`;
 
-  const started = Date.now();
-  const result = await withTimeout(
-    ctx.completion({
-      prompt: full,
-      image_path: imageUri,
-      n_predict: 400,
-      temperature: 0.2,
-      stop: STOP_TOKENS,
-    }),
-    COMPLETION_TIMEOUT_MS,
-    'diagnose',
-  );
-  const latencyMs = Date.now() - started;
+  try {
+    const started = Date.now();
+    const result = await withTimeout(
+      ctx.completion({
+        prompt: full,
+        image_path: imageUri,
+        n_predict: 400,
+        temperature: 0.2,
+        stop: STOP_TOKENS,
+      }),
+      COMPLETION_TIMEOUT_MS,
+      'diagnose',
+    );
+    const latencyMs = Date.now() - started;
 
-  const text = stripThinking(result.text);
-  const confidence = estimateConfidence(text);
-  const version = isMockMode ? MOCK_VERSION : MODEL_VERSION;
-  return parseResponse(text, confidence, version, latencyMs);
+    const text = stripThinking(result.text);
+    const confidence = estimateConfidence(text);
+    const version = isMockMode ? MOCK_VERSION : MODEL_VERSION;
+    return parseResponse(text, confidence, version, latencyMs);
+  } finally {
+    scheduleUnload();
+  }
 }
 
 function estimateConfidence(text: string): number {
@@ -383,23 +414,27 @@ export async function compareLocal(
   const prompt = buildComparisonPromptSingle(afterUri, language, diseaseName);
   const full = `${prompt.system}\n\n${prompt.user}`;
 
-  const started = Date.now();
-  const result = await withTimeout(
-    ctx.completion({
-      prompt: full,
-      image_path: afterUri,
-      n_predict: 250,
-      temperature: 0.2,
-      stop: STOP_TOKENS,
-    }),
-    COMPLETION_TIMEOUT_MS,
-    'compareLocal',
-  );
-  return {
-    text: stripThinking(result.text),
-    modelVersion: isMockMode ? `${MOCK_VERSION}-compare` : `${MODEL_VERSION}-compare-1img`,
-    latencyMs: Date.now() - started,
-  };
+  try {
+    const started = Date.now();
+    const result = await withTimeout(
+      ctx.completion({
+        prompt: full,
+        image_path: afterUri,
+        n_predict: 250,
+        temperature: 0.2,
+        stop: STOP_TOKENS,
+      }),
+      COMPLETION_TIMEOUT_MS,
+      'compareLocal',
+    );
+    return {
+      text: stripThinking(result.text),
+      modelVersion: isMockMode ? `${MOCK_VERSION}-compare` : `${MODEL_VERSION}-compare-1img`,
+      latencyMs: Date.now() - started,
+    };
+  } finally {
+    scheduleUnload();
+  }
 }
 
 export const __test = { estimateConfidence };

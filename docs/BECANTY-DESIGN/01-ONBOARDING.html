@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokouAI — Onboarding Screen</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2d5016 0%, #558b2f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .phone-frame {
+            width: 360px;
+            height: 800px;
+            background: white;
+            border: 12px solid #333;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .notch {
+            background: #333;
+            height: 24px;
+            width: 100%;
+            margin-bottom: -1px;
+        }
+        .screen {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        .screen.onboarding-1 {
+            background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
+        }
+        .header {
+            background: linear-gradient(135deg, #2d5016 0%, #558b2f 100%);
+            color: white;
+            padding: 30px 20px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .content h2 {
+            font-size: 24px;
+            color: #2d5016;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .content p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn {
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 48px;
+        }
+        .btn-primary {
+            background: #2d5016;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1f3a0f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+        }
+        .btn-secondary {
+            background: white;
+            color: #2d5016;
+            border: 2px solid #2d5016;
+        }
+        .btn-secondary:hover {
+            background: #f1f8e9;
+            transform: translateY(-2px);
+        }
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+        }
+        .step {
+            width: 36px;
+            height: 4px;
+            background: #ccc;
+            border-radius: 2px;
+        }
+        .step.active {
+            background: #2d5016;
+            width: 48px;
+        }
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: #555;
+        }
+        .feature-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="screen onboarding-1">
+            <div class="content">
+                <div class="icon">🌱</div>
+                <h2>Welcome to PokouAI</h2>
+                <p>Your offline cocoa disease expert, in your pocket</p>
+                
+                <div class="features">
+                    <div class="feature">
+                        <span class="feature-icon">📱</span>
+                        <span>Works without internet</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🗣️</span>
+                        <span>Available in 4 languages</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">⚡</span>
+                        <span>Fast, instant diagnosis</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="steps">
+                <div class="step active"></div>
+                <div class="step"></div>
+                <div class="step"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary">Continue</button>
+                <button class="btn btn-secondary">Select Language</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { getDiagnosis, type DiagnosisRow } from '@/services/db';
-import { getCauses } from '@/services/knowledge';
+import { getCauses, getSources } from '@/services/knowledge';
 import type { RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Learn'>;
@@ -20,6 +20,7 @@ export default function LearnScreen({ route }: Props) {
 
   if (!d) return null;
   const causes = getCauses(d.disease, i18n.language);
+  const sources = getSources(d.disease);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -35,6 +36,13 @@ export default function LearnScreen({ route }: Props) {
           <Text style={styles.tipTitle}>💡 {t('learn.takeaway_title')}</Text>
           <Text style={styles.tipBody}>{t('learn.takeaway_body')}</Text>
         </View>
+
+        {sources.length > 0 && (
+          <View style={styles.sources}>
+            <Text style={styles.sourcesLabel}>📚 {t('learn.sources')}</Text>
+            <Text style={styles.sourcesBody}>{sources.join(' · ')}</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -71,4 +79,7 @@ const styles = StyleSheet.create({
   },
   tipTitle: { fontWeight: '700', color: '#e65100', marginBottom: 4 },
   tipBody: { color: '#4e342e', lineHeight: 20 },
+  sources: { marginTop: 12, paddingHorizontal: 4 },
+  sourcesLabel: { fontSize: 11, color: '#558b2f', fontWeight: '700', marginBottom: 2, letterSpacing: 0.5 },
+  sourcesBody: { fontSize: 11, color: '#616161', lineHeight: 16 },
 });

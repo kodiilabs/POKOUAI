@@ -79,7 +79,8 @@
         "en": "If more than 30% of pods are affected, or if the disease spreads despite treatment.",
         "dyu": "[FR→DYU à valider] Voir version française.",
         "bci": "[FR→BCI à valider] Voir version française."
-      }
+      },
+      "sources": ["CABI Plantwise", "CNRA Côte d'Ivoire", "FAO Plant Health"]
     },
     "frosty_pod_rot": {
       "id": "frosty_pod_rot",
@@ -146,7 +147,8 @@
         "en": "IMMEDIATELY. This disease can destroy an entire plantation if it establishes itself.",
         "dyu": "[FR→DYU à valider] Voir version française.",
         "bci": "[FR→BCI à valider] Voir version française."
-      }
+      },
+      "sources": ["CABI Plantwise", "ICCO Pest and Disease Watch", "FAO Plant Health"]
     },
     "swollen_shoot": {
       "id": "swollen_shoot",
@@ -212,7 +214,8 @@
         "en": "Always. Swollen shoot is a notifiable disease in Côte d'Ivoire.",
         "dyu": "[FR→DYU à valider] Voir version française.",
         "bci": "[FR→BCI à valider] Voir version française."
-      }
+      },
+      "sources": ["CNRA Côte d'Ivoire", "World Cocoa Foundation", "IITA"]
     },
     "vascular_streak_dieback": {
       "id": "vascular_streak_dieback",
@@ -278,7 +281,8 @@
         "en": "If more than 20% of trees show symptoms.",
         "dyu": "[FR→DYU à valider] Voir version française.",
         "bci": "[FR→BCI à valider] Voir version française."
-      }
+      },
+      "sources": ["CABI Plantwise", "IITA"]
     },
     "healthy": {
       "id": "healthy",
@@ -314,7 +318,8 @@
         "en": "Not for this pod, but an annual field visit is recommended.",
         "dyu": "[FR→DYU à valider] Voir version française.",
         "bci": "[FR→BCI à valider] Voir version française."
-      }
+      },
+      "sources": ["World Cocoa Foundation", "FAO Good Agricultural Practices"]
     },
     "other_damage": {
       "id": "other_damage",
@@ -366,7 +371,8 @@
         "en": "If unsure of the diagnosis, or if damage becomes widespread.",
         "dyu": "[FR→DYU à valider] Voir version française.",
         "bci": "[FR→BCI à valider] Voir version française."
-      }
+      },
+      "sources": ["CNRA Côte d'Ivoire", "FAO Integrated Pest Management"]
     }
   }
 }

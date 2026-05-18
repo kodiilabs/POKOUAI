@@ -1,10 +1,25 @@
 import {
   AudioModule,
-  AudioPlayer,
-  AudioRecorder,
   RecordingPresets,
   setAudioModeAsync,
 } from 'expo-audio';
+import type { AudioPlayer, AudioRecorder } from 'expo-audio';
+
+// expo-audio 55 exports AudioRecorder/AudioPlayer as type-only from its root
+// (`export type * from './AudioModule.types'`). The runtime classes live on
+// AudioModule — the same path the library uses internally, see ExpoAudio.js
+// where it calls `AudioModule.AudioPlayer.prototype.replace`, etc.
+// Using the top-level imports as values throws "not a constructor" at runtime.
+const AudioRecorderCtor = (
+  AudioModule as unknown as {
+    AudioRecorder: new (preset: unknown) => AudioRecorder;
+  }
+).AudioRecorder;
+const AudioPlayerCtor = (
+  AudioModule as unknown as {
+    AudioPlayer: new (source: { uri: string }) => AudioPlayer;
+  }
+).AudioPlayer;
 
 let activeRecorder: AudioRecorder | null = null;
 let activePlayer: AudioPlayer | null = null;
@@ -32,7 +47,7 @@ export async function startRecording(): Promise<RecordingHandle> {
   if (!(await ensureMicPermission())) throw new Error('microphone permission denied');
 
   console.log('[voice] startRecording');
-  const recorder = new AudioRecorder(RecordingPresets.LOW_QUALITY);
+  const recorder = new AudioRecorderCtor(RecordingPresets.LOW_QUALITY);
   await recorder.prepareToRecordAsync();
   recorder.record();
   activeRecorder = recorder;
@@ -59,7 +74,7 @@ export async function startRecording(): Promise<RecordingHandle> {
 
 export async function play(uri: string): Promise<void> {
   await stopPlayback();
-  const player = new AudioPlayer({ uri });
+  const player = new AudioPlayerCtor({ uri });
   activePlayer = player;
   player.addListener('playbackStatusUpdate', (status) => {
     if (status.didJustFinish) {

@@ -43,6 +43,12 @@ export function getCauses(disease: DiseaseId, lang: string): Causes {
   };
 }
 
+export function getSources(disease: DiseaseId): string[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = (diseases as any).diseases?.[disease];
+  return Array.isArray(raw?.sources) ? raw.sources : [];
+}
+
 interface CalendarEntry {
   month: string;
   title: string;
@@ -68,7 +74,7 @@ export function pickQuizQuestion(disease: DiseaseId, lang: string): QuizQuestion
   const byDisease = (quizCfg as any).by_disease ?? {};
   const pool: QuizQuestion[] = byDisease[disease]?.[langKey] ?? [];
   if (pool.length > 0) {
-    return pool[Math.floor(Math.random() * pool.length)] ?? pool[0];
+    return (pool[Math.floor(Math.random() * pool.length)] ?? pool[0]) as QuizQuestion;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fallback = (quizCfg as any).fallback?.[langKey] as QuizQuestion;

@@ -21,16 +21,35 @@ PokouAI runs entirely on the phone: point camera at pod, get a disease name, tre
 
 ## Quick start
 
-### Mobile app
+> 📖 **If you're a reviewer running this for the first time, read [docs/STORY.md](docs/STORY.md) first.** It owns the constraints (Mac RAM, training-subset choices, Unsloth fine-tune) and where this is heading (Fair Trade Côte d'Ivoire partnership, first cooperative pilot next month).
+
+### First run — 60 seconds to the Farmer Agent demo
 
 ```bash
-# Prereqs: Node 20 (via nvm), Android Studio + emulator OR Xcode + iOS sim
+# Prereqs: Node 20 (via nvm), Xcode + iOS sim (or Android Studio + emulator), pnpm
 cd app/
-npm install
-npx expo start        # press 'a' for Android, 'i' for iOS
+pnpm install                     # if you see deps land in the workspace root, see Troubleshooting
+pnpm typecheck                   # must pass clean before reporting bugs
+pnpm start --clear
+pnpm ios                         # or: pnpm android
 ```
 
-First launch downloads the GGUF model (~1.5 GB, E2B). Subsequent launches are fully offline.
+In the app, on the Home screen, tap the purple **🎬 Farmer Agent — Skill demo** tile. The screen shows the same disease (black pod) and same image at **5 flow stages × 3 skill levels** — the simplest entry into what PokouAI is doing differently. The level you pick persists in AsyncStorage; flipping it from **Settings → Agent skill level (demo)** changes the badge on the production Result screen too.
+
+### Running an actual diagnosis
+
+Three modes — pick whichever matches your setup:
+
+1. **Sideload the on-device GGUF** (~1.5 GB Q4_K_M E2B + 880 MB mmproj) via Finder → iPhone → Files → PokouAI. **Settings → Model version** confirms readiness. Once sideloaded, inference is fully offline. Best on a physical device.
+2. **Hub mode** (the current default): run Ollama on a laptop with `gemma4:e2b` pulled, set the LAN URL in **Settings → Hub**. Used for the demo video. See [docs/demo.md](docs/demo.md).
+3. **Simulator with no model** — falls back to a deterministic mock; the rest of the UX is testable end-to-end. The Result screen shows a red `DEMO` badge in this mode.
+
+### Troubleshooting first-run
+
+- **Installs landed in the repo root, not in `app/`** — there's no pnpm workspace at root. Run installs from `pokou-ai/app/`. If a stray root-level `package.json` / `pnpm-lock.yaml` / `node_modules` appears, delete them and re-install in `app/`.
+- **`pnpm test` exits silently** — you ran it from `pokou-ai/`, not `pokou-ai/app/`. The Jest script lives in `app/package.json`.
+- **iOS Simulator fails to boot the model** — that's expected. AI Edge native engines (LiteRT-LM) require a physical device (iPhone 15 Pro / Pixel 8+). Use Hub mode or the mock fallback in Simulator.
+- **`npx expo install jest-expo` errors** — `expo install` requires an Expo project as cwd. Run it inside `app/`, not the workspace root.
 
 ### ML pipeline (fine-tuning)
 
@@ -107,13 +126,32 @@ pokou-ai/
 ├── ml/               Fine-tuning scripts and Kaggle notebooks
 ├── data/             Knowledge base + (gitignored) datasets
 ├── docs/             Full project docs and implementation checklist
-├── .claude.md        Claude Code configuration
+├── video/            Remotion post-production project (demo video assembly)
+├── .adlc/            ADLC artifacts (REQs, evals, assumptions, knowledge, dashboard)
+├── .claude/          Claude Code configuration + custom agents/skills/commands
+├── CLAUDE.md         Project-level instructions for Claude Code
 ├── LICENSE           Apache 2.0
 ├── PRIVACY_POLICY.md
 └── README.md
 ```
 
-See [docs/PokouAI_Project_Documentation.md](docs/PokouAI_Project_Documentation.md) for the full design.
+See [docs/PokouAI_Project_Documentation.md](docs/PokouAI_Project_Documentation.md) for the full design and [docs/PokouAI_Future_of_Learning.md](docs/PokouAI_Future_of_Learning.md) for the Farmer Agent + Knowledge Stack + Environmental Signals proposal.
+
+### Farmer Agent demo (sample-data prototype)
+
+The Farmer Agent skill-level adaptation framework is **demonstrated** in the app via [SkillDemoScreen](app/src/screens/SkillDemoScreen.tsx) — reachable from Home via the purple "🎬 Farmer Agent — Skill demo" tile. The screen shows the same black-pod diagnosis at three skill levels (Novice / Practitioner / Expert) across five flow stages (Onboard → Diagnose → Result → Day 7 → Lesson). Content is hardcoded sample data in [app/src/data/skill_demo.json](app/src/data/skill_demo.json) — there is **no live skill tracker, no voice ASR, no real follow-up wiring**. The demo's job is to make the framework visible for reviewers, not to ship the agent. See [.adlc/requirements/REQ-002-non-reader-redesign.md](.adlc/requirements/REQ-002-non-reader-redesign.md) (revision history) for the scope decision that parked the real agent for a future REQ.
+
+### Demo video (Remotion, 100% programmatic)
+
+The submission video is rendered **entirely from React components** — no simulator recording, no manual clips. The phone frame, the mock screens (Home / Skill Demo / Result), and every animation are React. Run:
+
+```sh
+cd video
+pnpm install   # ~250 MB Chromium on first run
+pnpm render    # → video/out/pokouai.mp4 (~62 s, 1080×1920 portrait)
+```
+
+`pnpm dev` opens the Remotion Studio for live preview. See [video/README.md](video/README.md) for what each scene shows and how to retime / re-caption.
 
 ---
 
@@ -132,7 +170,8 @@ All 5 disease responses (name, symptoms, treatment, prevention) ship in all 4 la
 
 ## Links
 
-- **Demo video**: _TBD_ (hosted on YouTube, unlisted)
+- **Demo video**: _recorded May 2026 — link added after upload_
+- **Demo playbook**: [docs/demo.md](docs/demo.md) — pre-flight, capture order, troubleshooting
 - **Kaggle notebook**: _TBD_
 - **GitHub**: this repo (public)
 

@@ -25,6 +25,8 @@ import QuizScreen from '@/screens/QuizScreen';
 import GroupModeScreen from '@/screens/GroupModeScreen';
 import FollowUpScreen from '@/screens/FollowUpScreen';
 import FarmIntelligenceLogScreen from '@/screens/FarmIntelligenceLogScreen';
+import LiteRTSmokeScreen from '@/screens/LiteRTSmokeScreen';
+import SkillDemoScreen from '@/screens/SkillDemoScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ONBOARDING_KEY = 'pokouai.onboarded';
@@ -101,6 +103,16 @@ export default function App() {
             name="IntelligenceLog"
             component={FarmIntelligenceLogScreen}
             options={{ title: 'Farm intelligence' }}
+          />
+          <Stack.Screen
+            name="LiteRTSmoke"
+            component={LiteRTSmokeScreen}
+            options={{ title: 'LiteRT smoke' }}
+          />
+          <Stack.Screen
+            name="SkillDemo"
+            component={SkillDemoScreen}
+            options={{ title: 'Farmer Agent' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

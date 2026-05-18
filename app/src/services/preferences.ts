@@ -12,10 +12,15 @@ const KEYS = {
   preferTier: 'pokouai.prefer_tier',
 } as const;
 
-const DEFAULT_HUB_URL = 'http://192.168.1.100:11434';
-export const HUB_MODEL_OPTIONS = ['gemma4:27b', 'gemma4:e4b'] as const;
+const DEFAULT_HUB_URL = 'http://192.168.2.85:11434';
+export const HUB_MODEL_OPTIONS = [
+  'cocoa-v1:latest',
+  'gemma4:e2b',
+  'gemma4:e4b',
+  'gemma4:27b',
+] as const;
 export type HubModel = (typeof HUB_MODEL_OPTIONS)[number];
-const DEFAULT_HUB_MODEL: HubModel = 'gemma4:27b';
+const DEFAULT_HUB_MODEL: HubModel = 'cocoa-v1:latest';
 
 export async function getCrop(): Promise<CropId> {
   const v = (await AsyncStorage.getItem(KEYS.crop)) as CropId | null;

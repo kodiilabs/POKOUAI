@@ -15,16 +15,19 @@ import { isHubReachable } from '@/services/NetworkService';
 
 type ProbeState = 'idle' | 'probing' | 'ok' | 'fail';
 
-const MODEL_HINTS: Record<HubModel, string> = {
-  'gemma4:27b': 'hub.model_27b_hint',
+const MODEL_HINTS: Partial<Record<HubModel, string>> = {
+  'cocoa-v1:latest': 'hub.model_cocoa_hint',
+  'gemma4:e2b': 'hub.model_e2b_hint',
   'gemma4:e4b': 'hub.model_e4b_hint',
+  'gemma4:27b': 'hub.model_27b_hint',
 };
 
 export default function HubSettingsScreen() {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
-  const [model, setModel] = useState<HubModel>('gemma4:27b');
+  const [model, setModel] = useState<HubModel>('cocoa-v1:latest');
   const [probe, setProbe] = useState<ProbeState>('idle');
+  const [snippetOpen, setSnippetOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -77,18 +80,27 @@ export default function HubSettingsScreen() {
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.modelName}>{m}</Text>
-              <Text style={styles.modelHint}>{t(MODEL_HINTS[m])}</Text>
+              {MODEL_HINTS[m] && <Text style={styles.modelHint}>{t(MODEL_HINTS[m]!)}</Text>}
             </View>
             {model === m && <Text style={styles.check}>✓</Text>}
           </TouchableOpacity>
         ))}
 
-        <View style={styles.snippet}>
-          <Text style={styles.snippetTitle}>{t('hub.setup_title')}</Text>
-          <Text style={styles.code}>curl -fsSL https://ollama.com/install.sh | sh</Text>
-          <Text style={styles.code}>ollama pull {model}</Text>
-          <Text style={styles.code}>ollama serve</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.snippetToggle}
+          onPress={() => setSnippetOpen((s) => !s)}
+        >
+          <Text style={styles.snippetToggleText}>
+            {snippetOpen ? '▼' : '▶'}  {t('hub.setup_title')}
+          </Text>
+        </TouchableOpacity>
+        {snippetOpen && (
+          <View style={styles.snippet}>
+            <Text style={styles.code}>curl -fsSL https://ollama.com/install.sh | sh</Text>
+            <Text style={styles.code}>ollama pull {model}</Text>
+            <Text style={styles.code}>ollama serve</Text>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -125,11 +137,16 @@ const styles = StyleSheet.create({
   status: { textAlign: 'center', marginTop: 12, fontSize: 15 },
   ok: { color: '#2e7d32' },
   fail: { color: '#c62828' },
+  snippetToggle: {
+    marginTop: 20,
+    paddingVertical: 10,
+  },
+  snippetToggleText: { color: '#1b5e20', fontWeight: '700' },
   snippet: {
     backgroundColor: '#263238',
     padding: 12,
     borderRadius: 10,
-    marginTop: 20,
+    marginTop: 4,
   },
   snippetTitle: { color: '#b3e5fc', fontWeight: '700', marginBottom: 6 },
   code: { color: '#fff', fontFamily: 'Courier', fontSize: 12, marginBottom: 2 },

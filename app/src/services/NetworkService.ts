@@ -22,7 +22,8 @@ export async function isOnline(): Promise<boolean> {
 }
 
 export async function isHubReachable(): Promise<boolean> {
-  const url = await getHubUrl();
+  const url = (await getHubUrl()).trim();
+  if (!url) return false;
   return probe(`${url.replace(/\/$/, '')}/api/tags`);
 }
 

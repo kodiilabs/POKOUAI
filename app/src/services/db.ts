@@ -191,3 +191,13 @@ export async function updateNote(id: number, note: string): Promise<void> {
   const conn = ensureDb();
   await conn.runAsync('UPDATE diagnoses SET note = ? WHERE id = ?', [note, id]);
 }
+
+/** Wipes every diagnosis and its follow-up loops. Dev-only: irreversible. */
+export async function clearAllDiagnoses(): Promise<void> {
+  const conn = ensureDb();
+  await conn.execAsync(`
+    DELETE FROM loops;
+    DELETE FROM diagnoses;
+    DELETE FROM sqlite_sequence WHERE name IN ('loops', 'diagnoses');
+  `);
+}

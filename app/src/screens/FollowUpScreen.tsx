@@ -73,7 +73,7 @@ export default function FollowUpScreen({ route, navigation }: Props) {
         pickedUri,
         currentLanguage(),
         initial.diseaseName,
-        { onTierChosen: setComparisonTier },
+        { prefer: 'hub', onTierChosen: setComparisonTier },
       );
       setComparisonText(routed.text);
       await setComparisonResponse(loopId, routed.text);

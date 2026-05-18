@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { downloadModel, isModelReady, MODEL_SIZE_MB } from '@/services/LlamaService';
 import { routeInference } from '@/services/InferenceRouter';
 import { insertDiagnosis } from '@/services/db';
 import { currentLanguage } from '@/i18n';
 import type { InferenceTier, RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Diagnosis'>;
-type Phase = 'idle' | 'model_missing' | 'downloading' | 'analyzing' | 'error';
+type Phase = 'idle' | 'analyzing' | 'error';
 
 const TIER_LABEL: Record<InferenceTier, string> = {
   local: '📱 local',
@@ -21,29 +20,10 @@ const TIER_LABEL: Record<InferenceTier, string> = {
 
 export default function DiagnosisScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
-  const { imageUri, groupMode } = route.params;
+  const { imageUri } = route.params;
   const [phase, setPhase] = useState<Phase>('idle');
-  const [progress, setProgress] = useState(0);
   const [errorKey, setErrorKey] = useState<string>('diagnosis.error_generic');
   const [chosenTier, setChosenTier] = useState<InferenceTier | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      if (!(await isModelReady())) setPhase('model_missing');
-    })();
-  }, []);
-
-  const doDownload = async () => {
-    setPhase('downloading');
-    setProgress(0);
-    try {
-      await downloadModel((p) => setProgress(p));
-      setPhase('idle');
-    } catch {
-      setErrorKey('diagnosis.error_generic');
-      setPhase('error');
-    }
-  };
 
   const analyze = async () => {
     if (!imageUri) return;
@@ -51,6 +31,9 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
     setChosenTier(null);
     try {
       const routed = await routeInference(imageUri, currentLanguage(), {
+        // Prefer hub while on-device E2B exceeds iPhone jetsam (>3 GB RSS).
+        // Falls back to local mock if hub is unreachable.
+        prefer: 'hub',
         onTierChosen: setChosenTier,
       });
       if (routed.confidenceBand === 'low') {
@@ -58,14 +41,10 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
         setPhase('error');
         return;
       }
-      if (groupMode) {
-        // In group mode we skip persistence — extension worker is demoing live
-        navigation.goBack();
-        return;
-      }
       const id = await insertDiagnosis(imageUri, currentLanguage(), routed, routed.tier);
       navigation.replace('Result', { diagnosisId: id });
-    } catch {
+    } catch (e) {
+      console.error('[DiagnosisScreen] inference failed:', e);
       setErrorKey('diagnosis.error_generic');
       setPhase('error');
     }
@@ -82,22 +61,6 @@ export default function DiagnosisScreen({ route, navigation }: Props) {
       )}
 
       <View style={styles.panel}>
-        {phase === 'model_missing' && (
-          <>
-            <Text style={styles.hint}>{t('diagnosis.model_loading')}</Text>
-            <TouchableOpacity style={styles.btn} onPress={doDownload}>
-              <Text style={styles.btnText}>↓ GGUF (~{(MODEL_SIZE_MB / 1000).toFixed(1)} GB)</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {phase === 'downloading' && (
-          <>
-            <ActivityIndicator size="large" color="#1b5e20" />
-            <Text style={styles.hint}>{(progress * 100).toFixed(0)} %</Text>
-          </>
-        )}
-
         {phase === 'analyzing' && (
           <>
             <ActivityIndicator size="large" color="#1b5e20" />
