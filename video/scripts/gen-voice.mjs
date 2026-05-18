@@ -47,21 +47,20 @@ const TOTAL_SECONDS = 77.5;
 
 // Each segment lands at startSec in the final track. Segment durations are
 // determined by Kokoro at runtime; gaps between segments become silence.
-// Start times chosen to leave a ~0.5s gap after each segment's natural end
-// (durations measured empirically from a previous run). The script logs an
-// overlap warning when any segment runs into the next, so adjust if you
-// retune the text.
+// Start times chosen to leave a ~0.4s gap after each segment's natural end
+// (durations measured empirically across runs). The script logs an
+// overlap warning when any segment runs into the next.
 const SEGMENTS = [
-  { id: 'title', startSec: 0.6, text: "PokouAI. An offline AI advisor for cocoa farmers in Côte d'Ivoire." },
-  { id: 'problem', startSec: 7.5, text: "Cocoa farmers lose thirty to forty percent of their harvest to preventable diseases. Extension agents are scarce, the internet is unreliable, and most apps assume a phone the farmer doesn't have." },
-  { id: 'home', startSec: 19.5, text: "PokouAI runs on a fifty dollar Android, in the farmer's own language, even in airplane mode." },
-  { id: 'agent_intro', startSec: 26.0, text: "Behind every diagnosis is a Farmer Agent." },
-  { id: 'skill_demo', startSec: 29.5, text: "Same disease, same image, three farmers. The novice hears the full story and step by step treatment. The practitioner gets confirmation and money framing. The expert gets a one line check. The agent just adapts." },
-  { id: 'arch', startSec: 52.0, text: "Three tiers: the phone, the cooperative hub on Ollama, and the cloud. The router picks the best, automatically." },
-  { id: 'diagnosis', startSec: 59.5, text: "Point. Capture. Diagnosis in seconds, with a personalised badge. A seven day loop turns the field into a classroom." },
-  { id: 'honest', startSec: 67.5, text: "Honest build. Real next step." },
-  { id: 'partnership', startSec: 70.5, text: "Partnering with Fair Trade Côte d'Ivoire. The first cooperative pilot starts next month." },
-  { id: 'closing', startSec: 76.7, text: "PokouAI." },
+  { id: 'title', startSec: 0.5, text: "PokouAI. An offline AI advisor for cocoa farmers in Côte d'Ivoire." },
+  { id: 'problem', startSec: 7.2, text: "Cocoa farmers lose thirty to forty percent of their harvest to preventable diseases. Extension agents are scarce, and most apps assume a phone the farmer doesn't have." },
+  { id: 'home', startSec: 19.1, text: "PokouAI runs on a fifty dollar Android, in the farmer's own language, even in airplane mode." },
+  { id: 'agent_intro', startSec: 26.8, text: "Behind every diagnosis is a Farmer Agent." },
+  { id: 'skill_demo', startSec: 31.4, text: "Same disease, same image, three farmers. The novice hears the full story and step by step treatment. The practitioner gets confirmation and money framing. The expert gets a one line check. The agent just adapts." },
+  { id: 'arch', startSec: 47.1, text: "Three tiers: the phone, the cooperative hub on Ollama, and the cloud. The router picks the best, automatically." },
+  { id: 'diagnosis', startSec: 55.6, text: "Point. Capture. Diagnosis in seconds, with a personalised badge. A seven day loop turns the field into a classroom." },
+  { id: 'honest', startSec: 64.9, text: "Honest build. Real next step." },
+  { id: 'partnership', startSec: 68.3, text: "Partnering with Fair Trade Côte d'Ivoire. The first cooperative pilot starts next month." },
+  { id: 'closing', startSec: 75.0, text: "PokouAI." },
 ];
 
 function log(msg) {
