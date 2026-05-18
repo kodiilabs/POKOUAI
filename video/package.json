@@ -8,6 +8,7 @@
     "render": "remotion render PokouAIAutoVideo out/pokouai.mp4",
     "render:fast": "remotion render PokouAIAutoVideo out/pokouai-draft.mp4 --concurrency=1 --crf=28",
     "gen:voice": "node scripts/gen-voice.mjs",
+    "gen:screenshots": "node scripts/gen-screenshots.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
